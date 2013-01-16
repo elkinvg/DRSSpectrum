@@ -1,0 +1,9 @@
+*.o
+*~
+obj/
+git/
+*.user
+bin/
+Make*
+*.d
+*-back*
