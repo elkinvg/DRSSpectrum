@@ -1,5 +1,5 @@
 #include "drsread.h"
 
-DRSRead::DRSRead()
+DRSread::DRSread()
 {
 }

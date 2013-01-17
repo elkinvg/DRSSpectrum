@@ -15,7 +15,23 @@ unix {
 }
 
 SOURCES += main.cpp \
-    drsread.cpp
+    drsread.cpp \
+    drs4outfile.cpp
+
+SOURCES += ./hlp/auto_signal_detect.c \
+           ./hlp/calibrate_pixels.cpp \
+           ./hlp/domhistgcc.cpp \
+           ./hlp/domino-n.cpp \
+           ./hlp/drs_reader.cpp \
+           ./hlp/fit_spectra.cpp \
+           ./hlp/fit_spectra_complex.cpp \
+           ./hlp/generate_spectra.cpp \
+           ./hlp/get_spectrum.cxx \
+           ./hlp/hist.C \
+           ./hlp/process_cluster_log.cpp \
+           ./hlp/read_data_vah.cpp
+
 
 HEADERS += \ 
-    drsread.h
+    drsread.h \
+    drs4outfile.h
