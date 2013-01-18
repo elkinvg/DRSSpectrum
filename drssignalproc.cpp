@@ -1,5 +1,7 @@
 #include "drssignalproc.h"
 #include <iostream>
+#include <math.h>
+
 using namespace std;
 
 DRSSignalProc::DRSSignalProc()
@@ -103,10 +105,115 @@ void DRSSignalProc::peak(unsigned short *n_amplitudes)
 {
 }
 
+void DRSSignalProc:: autoSignalDetectKusskoff(unsigned short *k_amplitudes, int eventnum)
+{
+
+    int  ready_to_overflow = 0, overflow = 0;
+    for ( int i = 0; i < 1024; i++ )
+    {
+        float amp =  k_amplitudes[i]/65535.-0.5;
+        if(overflow) {
+            if(amp > 0) {
+                overflow = 0;
+            }
+            ready_to_overflow = (amp > 0.35);
+        } else
+            if(ready_to_overflow) {
+                if(amp < -0.25) {
+                    overflow = 1;
+                } else if (amp < 0.35)
+                    ready_to_overflow = 0;
+            } else
+                if(amp > 0.35)
+                    ready_to_overflow = 1;
+        if(overflow)
+            amp += 1.;
+
+        sumamp[i] += amp/numsampl;
+        EventSN++;
+    }
+    if (EventSN!=eventnum) return;
+    autoSignalDetectKusskoffProc(eventnum);
+    EventSN=0;
+}
+
 void DRSSignalProc::init()
 {
     posorneg = -1; // positive = 1 ; negative = -1;
     VoltMode = 0.5; //-0.5 <> 0.5 V = 0.5 ; 0 <> 1 = 0;
     factor = 1;
     kuskoff_amplitude=false;
+    EventSN = 0;
+}
+
+void DRSSignalProc::autoSignalDetectKusskoffProc(int eventnum)
+{
+//    for (i=0; i<1024; i++)
+//	    sumamp[i]= sumamp[i]/eventnum;
+    float x[124];
+    float y[124];
+
+    for(int i=0;i<124;i++) {
+      x[i] = i;
+      y[i] = 0;
+    }
+
+    float integrall = 0;
+
+    for(int i=16;i<1024-16;i++) {
+      y[(i-16)/8] += sumamp[i];
+      integrall += sumamp[i];
+    }
+
+    double p[5];
+    p[1] = 0;
+    for(int i = 0; i < 10; i++)
+      p[1] += y[i];
+    p[1] = p[1]/10;
+
+    p[0]= (y[123]-p[1])/124;
+
+
+
+    float max = 0;
+
+    for(int i = 0; i<124;i++)
+      if(integrall*max <= integrall*y[i]) {
+        max = y[i];
+      }
+
+    double half_height = (max-p[1])/sqrt(2.718)+p[1];
+    int half_height_min = 0, half_height_max = 0;
+
+    for(int i = 0; i<124;i++)
+      if(integrall*half_height <= integrall*y[i]) {
+        half_height_min = i;
+        break;
+      }
+
+    for(int i = half_height_min; i<124;i++)
+      if(integrall*half_height > integrall*y[i]) {
+        half_height_max = i;
+        break;
+      }
+
+    p[3] = (half_height_max+half_height_min)/2.;
+    p[4] = (half_height_max-half_height_min)/2.;
+
+    p[2] = (integrall-p[1]*124-p[0]*(124*124/2))/(2.507*p[4]);
+
+    //FIT???
+
+    signal_min = p[3] - p[4]*2.6;
+    signal_max = p[3] + p[4]*2.6;
+    noise_min = 0;
+    noise_max = p[3] - p[4]*3.3;
+
+    signal_min = 16+8*signal_min;
+    signal_max = 16+8*signal_max;
+    noise_min = 16+8*noise_min;
+    noise_max = 16+8*noise_max;
+
+    factor = 1;
+    if(integrall < 0) factor = -1;
 }

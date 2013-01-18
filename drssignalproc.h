@@ -1,7 +1,7 @@
 #ifndef DRSSIGNALPROC_H
 #define DRSSIGNALPROC_H
-#include "drstype.h"
-
+//
+//const int numsampl = 1024;
 class DRSSignalProc
 {
 public:
@@ -13,8 +13,12 @@ public:
     unsigned int noise_min,noise_max,signal_min,signal_max,signal_peak;
     float getsignal(unsigned short *n_amplitudes, unsigned short *n_times);
     void peak(unsigned short *n_amplitudes);
+    void autoSignalDetectKusskoff(unsigned short *k_amplitudes,int eventnum);
 private:
     void init();
+    float sumamp[numsampl]; // sum of the amplitudes
+    int EventSN; // serial number of the event
+    void autoSignalDetectKusskoffProc(int eventnum);
 };
 
 #endif // DRSSIGNALPROC_H

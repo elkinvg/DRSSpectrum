@@ -19,7 +19,9 @@ SOURCES += main.cpp \
     drsread.cpp \
     drs4outfile.cpp \
     drstype.cpp \
-    drssignalproc.cpp
+    drssignalproc.cpp \
+    drsreadoneline.cpp \
+    drsreadoffline.cpp
 
 OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
 #SOURCES += ./hlp/auto_signal_detect.c \
@@ -42,4 +44,6 @@ HEADERS += \
     drsread.h \
     drs4outfile.h \
     drstype.h \
-    drssignalproc.h
+    drssignalproc.h \
+    drsreadoneline.h \
+    drsreadoffline.h
