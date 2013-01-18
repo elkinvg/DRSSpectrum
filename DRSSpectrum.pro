@@ -9,6 +9,7 @@ DEPENDPATH += dll
 CONFIG += debug_and_release
 
 win32 {
+INCLUDEPATH += c:\root\include\
 }
 
 unix {
@@ -16,9 +17,12 @@ unix {
 
 SOURCES += main.cpp \
     drsread.cpp \
-    drs4outfile.cpp
+    drs4outfile.cpp \
+    drstype.cpp \
+    drssignalproc.cpp
 
-SOURCES += ./hlp/auto_signal_detect.c \
+OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
+#SOURCES += ./hlp/auto_signal_detect.c \
            ./hlp/calibrate_pixels.cpp \
            ./hlp/domhistgcc.cpp \
            ./hlp/domino-n.cpp \
@@ -29,9 +33,13 @@ SOURCES += ./hlp/auto_signal_detect.c \
            ./hlp/get_spectrum.cxx \
            ./hlp/hist.C \
            ./hlp/process_cluster_log.cpp \
-           ./hlp/read_data_vah.cpp
+           ./hlp/read_data_vah.cpp \
+           ./hlp/qnetconv.cc \
+           ./hlp/main_get_opt.c
 
 
 HEADERS += \ 
     drsread.h \
-    drs4outfile.h
+    drs4outfile.h \
+    drstype.h \
+    drssignalproc.h

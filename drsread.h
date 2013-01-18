@@ -8,9 +8,12 @@ using namespace std;
 class DRSread : public DRS4outfile
 {
 public:
-    DRSread();
+    explicit DRSread(int type);
     ifstream DRSinput;
     long int Nevent;
+    void DRS4read(string outfilename);
+private:
+    int typeofDRS;
 };
 
 #endif // DRSREAD_H
