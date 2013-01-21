@@ -9,6 +9,8 @@
 //#include "drsreadoffline.h"
 #include "drsspectrumproc.h"
 
+#include <root/TRint.h>
+
 using namespace std;
 
 bool onlydetect=false;
@@ -173,13 +175,20 @@ int main(int argc, char** argv)
         }
     }
 
+
     if(!oneline_mode)
     {
         if(outputfileflag) spectrum->SetOutFileName(NameOutputFile);
         if(getfactor!=0) spectrum->SetFactor(getfactor);
         if (amplitudekuskoffmode) spectrum->SetModeIntegral(amplitudekuskoffmode);
         if(NumOfBins>0) spectrum->SetNumberOfBins(NumOfBins);
+        TApplication *myapp = new TApplication("h",0,0);
+        //TRint *myapp = new TRint("h",0,0);
         spectrum->GetSpectumOffline(argv[optind]);
+        myapp->Run();
+        cout << " ADD!" << endl;
+        //myapp->Terminate(1000);
+        //myapp->Terminate(0);
     }
 
     delete spectrum;

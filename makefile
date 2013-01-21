@@ -11,7 +11,7 @@
     OBJS          = $(OBJDIR)/main.o $(OBJDIR)/drsread.o $(OBJDIR)/drssignalproc.o $(OBJDIR)/drsspectrumproc.o
 
     TARGETLOC     = $(BINDIR)/$(TARGET)
-    
+    MKDIR         = mkdir
     LIBS          = $(ROOTLIBS)
     RELEASE_FLAGS = -MD $(ROOTFLAGS) -O2
     DEBUG_FLAGS   = -MD $(ROOTFLAGS) -O0 -g -DDEBUG -Wall

@@ -6,6 +6,7 @@
 #ifndef __MINGW32__
 #include <root/TH1F.h>
 #include <root/TCanvas.h>
+#include <root/TApplication.h>
 #endif
 class DRSSpectrumProc: public DRSread, public DRSSignalProc
 {
@@ -25,12 +26,15 @@ public:
     bool autonameOutFile;
     int num_channels;
     int work_channel;
+    TApplication *theApp;
 
 
     void SetOutFileName(string);
     void SetNumberOfBins(unsigned int);
     void GetSpectumOffline(string filename , int type = DRS4);
     void CreateSimpleHist(std::vector<float>& signal);
+    void initAppRoot(int argc, char** argv);
+    void AppRun();
 private:
     string OutFileName;
     int NBins;

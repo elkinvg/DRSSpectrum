@@ -1,6 +1,9 @@
 #include "drsspectrumproc.h"
 #include <iostream>
 #include <vector>
+#ifndef __MINGW32__
+#include <root/TApplication.h>
+#endif
 
 DRSSpectrumProc::DRSSpectrumProc()
 {
@@ -115,6 +118,7 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
         OutFileName = InFileName+".root";
     }
     CreateSimpleHist(signalval);
+
 }
 
 void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
@@ -128,6 +132,7 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
     float maxBorder = ValuesOfBorders.second;
 
 #ifndef __MINGW32__
+
     canvas = new TCanvas("DRS","DRS",800,600);
     HistSpectr = new TH1F("DRS-hist","DRS-hist",NBins,minBorder,maxBorder);
     int N = signal.size();
@@ -137,8 +142,18 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
     }
     HistSpectr->Draw();
     canvas->SaveAs(OutFileName.c_str());
-    //HistSpectr->SaveAs(OutFileName);
-    HistSpectr->Delete();
+    //HistSpectr->Delete();
+
 #endif
     cout << "Hist save as " << OutFileName << endl;
+}
+
+void DRSSpectrumProc::initAppRoot(int argc, char **argv)
+{
+    theApp = new TApplication("App",&argc,argv);
+}
+
+void DRSSpectrumProc::AppRun()
+{
+    theApp->Run();
 }
