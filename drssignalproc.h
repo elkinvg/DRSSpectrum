@@ -16,7 +16,7 @@ public:
 
 
     void SetModeIntegral(bool);
-    void SetFactor(float SetFactorValue);
+    void SetFactor(float SetFactorAValue, float SetFactorBValue);
     void GetMinMaxValOfSignal(std::pair<float,float>&);
     void SetMinMaxValOfSignal(float min,float max);
 
@@ -24,7 +24,7 @@ public:
     void autoSignalDetectKusskoff(const unsigned short *k_amplitudes, bool endfile); // if end = true
 
 private:
-    float factor;
+    float factor,factorB;
     float MinValOfSignal,MaxValOfSignal;
     bool kuskoff_amplitude; // true is amplitude mode; false is charge mode
     void init();

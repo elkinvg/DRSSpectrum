@@ -23,7 +23,8 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
     float signal = 0;
     for (int i=0;i<numsampl;i++)
     {
-        amps[i] = factor*(n_amplitudes[i]/65535.- VoltMode);        
+        amps[i] = /*factor**/(n_amplitudes[i]/65535.- VoltMode)/* + factorB*/;
+        //amps[i] = factor*amps[i] + factorB;
     }
     for (int i=noise_min;i<noise_max;i++)
     {
@@ -104,12 +105,16 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
     else
     for (int i=signal_min; i<signal_max; i++)
         signal += (((amps[i]/2.+amps[i+1]/2.)- noise)*(n_times[i+1]-n_times[i]));
+    signal = factor*signal + factorB;
     return signal;
 }
 
-void DRSSignalProc::SetFactor(float SetFactorValue)
+void DRSSignalProc::SetFactor(float SetFactorAValue, float SetFactorBValue)
 {
-    factor = SetFactorValue;
+    // y = factorA*x + factorB;
+    factor = SetFactorAValue;
+    factorB = SetFactorBValue;
+
 }
 
 void DRSSignalProc::GetMinMaxValOfSignal(std::pair<float, float> &minmax)
