@@ -9,7 +9,10 @@ DEPENDPATH += dll
 CONFIG += debug_and_release
 
 win32 {
-INCLUDEPATH += c:\root\include\
+INCLUDEPATH += c:\root\include
+CONFIG(debug, debug|release) {
+     DEFINES += DEBUG
+}
 }
 
 unix {
@@ -21,7 +24,8 @@ SOURCES += main.cpp \
     drstype.cpp \
     drssignalproc.cpp \
     drsreadoneline.cpp \
-    drsreadoffline.cpp
+    drsreadoffline.cpp \
+    drsspectrumproc.cpp
 
 OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
 #SOURCES += ./hlp/auto_signal_detect.c \
@@ -37,7 +41,8 @@ OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
            ./hlp/process_cluster_log.cpp \
            ./hlp/read_data_vah.cpp \
            ./hlp/qnetconv.cc \
-           ./hlp/main_get_opt.c
+           ./hlp/main_get_opt.c \
+           ./hlp/tmp.cpp
 
 
 HEADERS += \ 
@@ -46,4 +51,5 @@ HEADERS += \
     drstype.h \
     drssignalproc.h \
     drsreadoneline.h \
-    drsreadoffline.h
+    drsreadoffline.h \
+    drsspectrumproc.h

@@ -8,10 +8,11 @@
     OBJDIR        = ./obj
     BINDIR        = ./bin
     SODIR         = ./SO
-    OBJS          = $(OBJDIR)/main.o $(OBJDIR)/drssignalproc.o $(OBJDIR)/drstype.o $(OBJDIR)/drsread.o $(OBJDIR)/drsreadoneline.o \
-    $(OBJDIR)/drsreadoffline.o
+    OBJS          = $(OBJDIR)/main.o $(OBJDIR)/drsread.o $(OBJDIR)/drssignalproc.o $(OBJDIR)/drsspectrumproc.o
+
     TARGETLOC     = $(BINDIR)/$(TARGET)
-    CXXFLAGS      = -MD
+    CXXFLAGS      = -MD -DDEBUG $(ROOTFLAGS)
+    LIBS          = $(ROOTLIBS)
 #    CXXFLAGS      = $(ROOTFLAGS) -MD
 #    CXXLIBS       = $(ROOTLIBS)
 #    ROOTSO        = totdataread_cpp.so
@@ -22,7 +23,7 @@ all: $(TARGETLOC)
 
 $(TARGETLOC): $(OBJS)
 	@if ! [ -d $(BINDIR) ] ; then $(MKDIR) $(BINDIR) ; fi
-	$(LINK) $(OBJS) -o $(TARGETLOC)
+	$(LINK) $(OBJS) $(LIBS) -o $(TARGETLOC)
 	
 ####### compile
 $(OBJDIR)/%.o: %.cpp

@@ -9,7 +9,13 @@ DRSSignalProc::DRSSignalProc()
     init();
 }
 
-float DRSSignalProc::getsignal(unsigned short *n_amplitudes, unsigned short *n_times)
+void DRSSignalProc::SetModeIntegral(bool SetMode)
+{
+    kuskoff_amplitude = SetMode;
+}
+
+
+float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
 {
     float amps[1024];
     int eventnum=0;
@@ -17,7 +23,7 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, unsigned short *n_t
     float signal = 0;
     for (int i=0;i<numsampl;i++)
     {
-        amps[i] = factor*(n_amplitudes[i]/65535.- VoltMode);
+        amps[i] = factor*(n_amplitudes[i]/65535.- VoltMode);        
     }
     for (int i=noise_min;i<noise_max;i++)
     {
@@ -101,13 +107,27 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, unsigned short *n_t
     return signal;
 }
 
-void DRSSignalProc::peak(unsigned short *n_amplitudes)
+void DRSSignalProc::SetFactor(float SetFactorValue)
 {
+    factor = SetFactorValue;
 }
 
-void DRSSignalProc:: autoSignalDetectKusskoff(unsigned short *k_amplitudes, int eventnum)
+void DRSSignalProc::GetMinMaxValOfSignal(std::pair<float, float> &minmax)
 {
+    minmax.first = MinValOfSignal;
+    minmax.second = MaxValOfSignal;
+}
 
+void DRSSignalProc::SetMinMaxValOfSignal(float min, float max)
+{
+    MinValOfSignal= min;
+    MaxValOfSignal = max;
+}
+
+
+void DRSSignalProc::autoSignalDetectKusskoff(const unsigned short *k_amplitudes,bool endfile)
+{
+    //int eventnum;
     int  ready_to_overflow = 0, overflow = 0;
     for ( int i = 0; i < 1024; i++ )
     {
@@ -130,10 +150,13 @@ void DRSSignalProc:: autoSignalDetectKusskoff(unsigned short *k_amplitudes, int 
             amp += 1.;
 
         sumamp[i] += amp/numsampl;
+
         EventSN++;
     }
-    if (EventSN!=eventnum) return;
-    autoSignalDetectKusskoffProc(eventnum);
+
+    if (!endfile) return;
+
+    autoSignalDetectKusskoffProc(EventSN);
     EventSN=0;
 }
 
@@ -141,15 +164,17 @@ void DRSSignalProc::init()
 {
     posorneg = -1; // positive = 1 ; negative = -1;
     VoltMode = 0.5; //-0.5 <> 0.5 V = 0.5 ; 0 <> 1 = 0;
-    factor = 1;
+    factor = 1.;
     kuskoff_amplitude=false;
     EventSN = 0;
+    MinValOfSignal=0;
+    MaxValOfSignal=0;
 }
 
 void DRSSignalProc::autoSignalDetectKusskoffProc(int eventnum)
 {
-//    for (i=0; i<1024; i++)
-//	    sumamp[i]= sumamp[i]/eventnum;
+    for (int i=0; i<1024; i++)
+        sumamp[i]= sumamp[i]/eventnum;
     float x[124];
     float y[124];
 
@@ -214,6 +239,6 @@ void DRSSignalProc::autoSignalDetectKusskoffProc(int eventnum)
     noise_min = 16+8*noise_min;
     noise_max = 16+8*noise_max;
 
-    factor = 1;
-    if(integrall < 0) factor = -1;
+    factor = 1*factor;
+    if(integrall < 0) factor = -1*factor;
 }

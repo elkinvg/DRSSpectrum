@@ -1,20 +1,32 @@
 #ifndef DRSSIGNALPROC_H
 #define DRSSIGNALPROC_H
+#include <vector>
+#include <utility>
 //
-//const int numsampl = 1024;
+const int numsampl = 1024;
 class DRSSignalProc
 {
 public:
     DRSSignalProc();
-    bool kuskoff_amplitude;
-    float factor;
+
+
     int posorneg; // positive = 1 ; negative = -1;
     float VoltMode;// = 0.5; //-0.5 <> 0.5 V = 0.5 ; 0 <> 1 = 0;
     unsigned int noise_min,noise_max,signal_min,signal_max,signal_peak;
-    float getsignal(unsigned short *n_amplitudes, unsigned short *n_times);
-    void peak(unsigned short *n_amplitudes);
-    void autoSignalDetectKusskoff(unsigned short *k_amplitudes,int eventnum);
+
+
+    void SetModeIntegral(bool);
+    void SetFactor(float SetFactorValue);
+    void GetMinMaxValOfSignal(std::pair<float,float>&);
+    void SetMinMaxValOfSignal(float min,float max);
+
+    float getsignal(unsigned short *n_amplitudes, float *n_times);
+    void autoSignalDetectKusskoff(const unsigned short *k_amplitudes, bool endfile); // if end = true
+
 private:
+    float factor;
+    float MinValOfSignal,MaxValOfSignal;
+    bool kuskoff_amplitude; // true is amplitude mode; false is charge mode
     void init();
     float sumamp[numsampl]; // sum of the amplitudes
     int EventSN; // serial number of the event
