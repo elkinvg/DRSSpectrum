@@ -6,11 +6,18 @@
 #include <sstream>
 #include <signal.h>
 
+
 //#include "drsreadoffline.h"
 #include "drsspectrumproc.h"
+#ifndef __MINGW32__
+#include <root/TApplication.h>
+#else
+#include <TApplication.h>
+#include <TQObject.h>
+#endif
 
-#include <root/TRint.h>
 
+void fg(int sig);
 using namespace std;
 
 bool onlydetect=false;
@@ -22,7 +29,10 @@ unsigned short int get_noise_min,get_noise_max,get_signal_min, get_signal_max;
 bool oneline_mode = false;
 istringstream iss;
 string tmpvalue;
+
 void fg(int sig);
+void (*originalInterruptSignal)(int);
+
 float getfactor=0;
 unsigned int NumOfBins=0;
 
@@ -35,7 +45,15 @@ int fromStr(const std::string aS)
         if (_res==0) return -1;
         return _res;
 }
-
+#ifndef __MINGW32__
+class UsApp : public TApplication
+{
+public:
+    UsApp();
+    UsApp(const char *a ,int *b,char**c);
+    //void fg(int sig);
+};
+#endif
 static const char *optString = "mho:f:dab:";
 static const struct option longOpts[] = {
     {"help", 0, 0, 'h'},
@@ -182,10 +200,21 @@ int main(int argc, char** argv)
         if(getfactor!=0) spectrum->SetFactor(getfactor);
         if (amplitudekuskoffmode) spectrum->SetModeIntegral(amplitudekuskoffmode);
         if(NumOfBins>0) spectrum->SetNumberOfBins(NumOfBins);
-        TApplication *myapp = new TApplication("h",0,0);
+
+        //TApplication *myapp = new TApplication("h",0,0);
+#ifndef __MINGW32__
+        UsApp *myapp = new UsApp("h",0,0);
+#endif
+
+
         //TRint *myapp = new TRint("h",0,0);
         spectrum->GetSpectumOffline(argv[optind]);
+        TQObject::Connect("spectrum->canvas","Closed()","UsApp",myapp,"Close()");
+//        signal(SIGQUIT,fg);
+#ifndef __MINGW32__
+        originalInterruptSignal = signal(SIGINT,fg);
         myapp->Run();
+#endif
         cout << " ADD!" << endl;
         //myapp->Terminate(1000);
         //myapp->Terminate(0);
@@ -202,6 +231,30 @@ void help()
     cout << "[[-n|--number-of-bins] Number_of_bins] [[-f|--factor] factor]" << endl;
     cout<< "\t [-d|--only-detect] [-a|--amplitute]"  << endl;
 
+    exit(0);
+}
+#ifndef __MINGW32__
+UsApp::UsApp()  :TApplication()
+{
+
+    //signal(SIGQUIT,fg);
+}
+
+UsApp::UsApp(const char *a, int *b, char **c) :TApplication(a,b,c)
+{
+    //connect(this,SIGNAL(lastWindowClosed()),TQtRootSlot::CintSlot(),SLOT(TerminateAndQuit()));
+    //signal(SIGQUIT,fg);
+//    Close(this);
+    //this->
+    cout << " PPPP ->>> "<< endl;
+    //TApplication(a,b,c);
+}
+#endif
+void /*UsApp::*/fg(int sig)
+{
+    cout << " pizdec!!!! ->>> " << sig <<endl;
+    signal(SIGINT,originalInterruptSignal);
+    //return;
     exit(0);
 }
 

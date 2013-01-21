@@ -8,7 +8,7 @@
     OBJDIR        = ./obj
     BINDIR        = ./bin
     SODIR         = ./SO
-    OBJS          = $(OBJDIR)/main.o $(OBJDIR)/drsread.o $(OBJDIR)/drssignalproc.o $(OBJDIR)/drsspectrumproc.o
+    OBJS          = $(OBJDIR)/drsread.o $(OBJDIR)/drssignalproc.o $(OBJDIR)/drsspectrumproc.o $(OBJDIR)/rootframe.o
 
     TARGETLOC     = $(BINDIR)/$(TARGET)
     MKDIR         = mkdir
@@ -30,12 +30,16 @@ debug: all
 
 all: $(TARGETLOC)
 
-$(TARGETLOC): $(OBJS)
+$(TARGETLOC): $(OBJS) $(OBJDIR)/main.o 
 	@if ! [ -d $(BINDIR) ] ; then $(MKDIR) $(BINDIR) ; fi
-	$(LINK) $(OBJS) $(LIBS) -o $(TARGETLOC)
+	$(LINK) $(OBJDIR)/main.o $(OBJS)  $(LIBS) -o $(TARGETLOC)
 	
 ####### compile
-$(OBJDIR)/%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp %.h
+	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
+
+$(OBJDIR)/main.o: main.cpp
 	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 

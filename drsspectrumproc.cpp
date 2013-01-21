@@ -142,6 +142,7 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
     }
     HistSpectr->Draw();
     canvas->SaveAs(OutFileName.c_str());
+    //initAppRoot(0,0);
     //HistSpectr->Delete();
 
 #endif
@@ -150,10 +151,11 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
 
 void DRSSpectrumProc::initAppRoot(int argc, char **argv)
 {
-    theApp = new TApplication("App",&argc,argv);
+    //theApp = new TApplication("App",&argc,argv);
+    RF = new RootFrame(gClient->GetRoot(),400,200);
 }
 
 void DRSSpectrumProc::AppRun()
 {
-    theApp->Run();
+    //theApp->Run();
 }

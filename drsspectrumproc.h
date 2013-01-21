@@ -3,6 +3,8 @@
 #include "drssignalproc.h"
 #include "drsread.h"
 
+#include "rootframe.h"
+
 #ifndef __MINGW32__
 #include <root/TH1F.h>
 #include <root/TCanvas.h>
@@ -27,7 +29,7 @@ public:
     int num_channels;
     int work_channel;
     TApplication *theApp;
-
+    RootFrame *RF;
 
     void SetOutFileName(string);
     void SetNumberOfBins(unsigned int);
