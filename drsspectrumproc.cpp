@@ -4,18 +4,16 @@
 
 DRSSpectrumProc::DRSSpectrumProc()
 {
+    spectrinit();
     autodetect = true;
     onlydetect = false;
-    autonameOutFile=true;
-    NBins=1000;
 }
 
 DRSSpectrumProc::DRSSpectrumProc(bool bl_onlydetect)
 {
+    spectrinit();
     autodetect = true;
     onlydetect = bl_onlydetect;
-    NBins=1000;
-    autonameOutFile=true;
 }
 
 //DRSSpectrumProc::DRSSpectrumProc(bool bl_autodetect, bool bl_onlydetect)
@@ -26,14 +24,30 @@ DRSSpectrumProc::DRSSpectrumProc(bool bl_onlydetect)
 
 DRSSpectrumProc::DRSSpectrumProc(unsigned int get_noise_min, unsigned int get_noise_max, unsigned int get_signal_min, unsigned int get_signal_max)
 {
+    spectrinit();
     autodetect = false;
     onlydetect = false;
     noise_min = get_noise_min;
     noise_max = get_noise_max;
     signal_min = get_signal_min;
     signal_max = get_signal_max;
+}
+
+void DRSSpectrumProc::spectrinit()
+{
     num_channels = work_channel = 1;
     NBins=1000;
+    autonameOutFile=true;
+    canvasflag=false;
+    HistSpectrflag=false;
+}
+
+DRSSpectrumProc::~DRSSpectrumProc()
+{
+#ifndef __MINGW32__
+    if (HistSpectrflag) {HistSpectr->Delete();HistSpectrflag=false;}
+    if (canvasflag) {canvas->Destructor();canvasflag=false;}
+#endif
 }
 
 void DRSSpectrumProc::SetOutFileName(string name)
@@ -127,9 +141,15 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
     float minBorder = ValuesOfBorders.first;
     float maxBorder = ValuesOfBorders.second;
 
+
 #ifndef __MINGW32__
+
     canvas = new TCanvas("DRS","DRS",800,600);
+
     HistSpectr = new TH1F("DRS-hist","DRS-hist",NBins,minBorder,maxBorder);
+
+    canvasflag=true;HistSpectrflag=true;
+
     int N = signal.size();
     for (int i=0;i<N;i++)
     {
@@ -138,7 +158,8 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
     HistSpectr->Draw();
     canvas->SaveAs(OutFileName.c_str());
     //HistSpectr->SaveAs(OutFileName);
-    HistSpectr->Delete();
+
 #endif
     cout << "Hist save as " << OutFileName << endl;
 }
+

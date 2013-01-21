@@ -20,12 +20,8 @@ unix {
 
 SOURCES += main.cpp \
     drsread.cpp \
-    drs4outfile.cpp \
-    drstype.cpp \
     drssignalproc.cpp \
-    drsreadoneline.cpp \
-    drsreadoffline.cpp \
-    drsspectrumproc.cpp
+    drsspectrumproc.cpp \
 
 OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
 #SOURCES += ./hlp/auto_signal_detect.c \
@@ -42,14 +38,12 @@ OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
            ./hlp/read_data_vah.cpp \
            ./hlp/qnetconv.cc \
            ./hlp/main_get_opt.c \
-           ./hlp/tmp.cpp
+           ./hlp/tmp.cpp \
+           ./hlp/ex1run.cxx
 
 
 HEADERS += \ 
     drsread.h \
-    drs4outfile.h \
-    drstype.h \
     drssignalproc.h \
-    drsreadoneline.h \
-    drsreadoffline.h \
-    drsspectrumproc.h
+    drsspectrumproc.h \
+    rootframe.h

@@ -10,7 +10,7 @@ class DRSread
 {
 public:
     DRSread();
-    virtual ~DRSread();
+    /*virtual */~DRSread();
     ifstream DRSinput;
     long int Nevent;
     bool endfile;

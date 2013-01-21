@@ -14,6 +14,7 @@ public:
     DRSSpectrumProc(bool bl_onlydetect);
 //    DRSSpectrumProc(bool bl_autodetect ,bool bl_onlydetect);
     DRSSpectrumProc(unsigned int get_noise_min, unsigned int get_noise_max, unsigned int get_signal_min, unsigned int get_signal_max);
+    ~DRSSpectrumProc();
 
 #ifndef __MINGW32__
     TH1F *HistSpectr;
@@ -32,6 +33,8 @@ public:
     void GetSpectumOffline(string filename , int type = DRS4);
     void CreateSimpleHist(std::vector<float>& signal);
 private:
+    void spectrinit();
+    bool canvasflag,HistSpectrflag;
     string OutFileName;
     int NBins;
 };
