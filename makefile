@@ -11,13 +11,22 @@
     OBJS          = $(OBJDIR)/main.o $(OBJDIR)/drsread.o $(OBJDIR)/drssignalproc.o $(OBJDIR)/drsspectrumproc.o
 
     TARGETLOC     = $(BINDIR)/$(TARGET)
-    CXXFLAGS      = -MD -DDEBUG $(ROOTFLAGS)
+    
     LIBS          = $(ROOTLIBS)
+    RELEASE_FLAGS = -MD $(ROOTFLAGS) -O2
+    DEBUG_FLAGS   = -MD $(ROOTFLAGS) -O0 -g -DDEBUG -Wall
+
 #    CXXFLAGS      = $(ROOTFLAGS) -MD
 #    CXXLIBS       = $(ROOTLIBS)
 #    ROOTSO        = totdataread_cpp.so
 
-first: all
+first: release
+
+release: CXXFLAGS=  $(RELEASE_FLAGS)
+release: all
+
+debug: CXXFLAGS= $(DEBUG_FLAGS)
+debug: all
 
 all: $(TARGETLOC)
 
@@ -32,5 +41,8 @@ $(OBJDIR)/%.o: %.cpp
 
 clean: FORCE
 	$(DELFILE) ./SO/*.so ./SO/*.so* ./bin/*so ./obj/*.o *.h~ *.cpp~ *.d
+	
+remake: clean first
+remake_debug: clean debug
 
 FORCE:
