@@ -6,7 +6,7 @@ DRSSpectrumProc::DRSSpectrumProc()
 {
     spectrinit();
     autodetect = true;
-    onlydetect = false;
+    onlydetect = false;    
 }
 
 DRSSpectrumProc::DRSSpectrumProc(bool bl_onlydetect)
@@ -40,6 +40,9 @@ void DRSSpectrumProc::spectrinit()
     autonameOutFile=true;
     canvasflag=false;
     HistSpectrflag=false;
+    graphflag=false;
+    onlinemode = false;
+    fileopenflag = false;
 }
 
 DRSSpectrumProc::~DRSSpectrumProc()
@@ -47,6 +50,7 @@ DRSSpectrumProc::~DRSSpectrumProc()
 #ifndef __MINGW32__
     if (HistSpectrflag) {HistSpectr->Delete();HistSpectrflag=false;}
     if (canvasflag) {canvas->Destructor();canvasflag=false;}
+    if (graphflag) {graph->Delete();graphflag=false;}
 #endif
 }
 
@@ -69,12 +73,16 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
      * от одного до четырёх.
      * (нет пока реализации ... для  n channel)
      */
-    DRSFileReadStatusAndInfo(filename,type);
+    if (!fileopenflag)
+    {
+        DRSFileReadStatusAndInfo(filename,type);
+        fileopenflag = true;
+    }
 #ifndef __MINGW32__
     HistSpectr = new TH1F;
 #endif
-    unsigned short amp[1024];
-    float times[1024];
+    unsigned short amp[numsampl];
+    float times[numsampl];
     bool endframe;
     vector<float> signalval;
     float tmpsignal;
@@ -129,6 +137,7 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
         OutFileName = InFileName+".root";
     }
     CreateSimpleHist(signalval);
+    if (fileopenflag) DRSFileEnd();
 }
 
 void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
@@ -144,11 +153,10 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
 
 #ifndef __MINGW32__
 
-    canvas = new TCanvas("DRS","DRS",800,600);
+    if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
 
-    HistSpectr = new TH1F("DRS-hist","DRS-hist",NBins,minBorder,maxBorder);
+    if(!HistSpectrflag) {HistSpectr = new TH1F("DRS-hist","DRS-hist",NBins,minBorder,maxBorder); HistSpectrflag=true;}
 
-    canvasflag=true;HistSpectrflag=true;
 
     int N = signal.size();
     for (int i=0;i<N;i++)
@@ -161,5 +169,48 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
 
 #endif
     cout << "Hist save as " << OutFileName << endl;
+}
+
+void DRSSpectrumProc::CreatIntegralGraph(string filename, int type)
+{
+    if (!fileopenflag)
+    {
+        DRSFileReadStatusAndInfo(filename,type);
+        fileopenflag = true;
+    }
+    float IntegralSignal[numsampl];
+    unsigned short amp[numsampl];
+    float times[numsampl];
+    bool endframe;
+    while(!endfile)
+    {
+        if(type==DRS4)
+        {
+            endframe = DRSGetFrame(&amp[0],&times[0]);
+            /*if (autodetect) */autoSignalDetectKusskoff(&amp[0],endfile);
+            if (endframe) continue;
+        }
+    }
+    DRSFileSeekBegin();
+    autodetect = false;
+
+    getIntegralSignal(&IntegralSignal[0]);
+
+    string outgraphfile;
+    float N[numsampl];
+    if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
+    if (!graphflag)
+    {
+        outgraphfile = filename.substr(0,filename.find_last_of(".")) + "-integral.png";
+        for (int i=0;i<numsampl;i++) N[i]=(float)i;
+        graph = new TGraph(numsampl,N,IntegralSignal);
+        graph->Draw("ALP");
+        canvas->SaveAs(outgraphfile.c_str());
+    }
+    if(fileopenflag)
+    {
+        DRSFileEnd();
+        fileopenflag=false;
+    }
 }
 

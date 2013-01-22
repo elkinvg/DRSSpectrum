@@ -23,7 +23,7 @@ void DRSread::DRSFileReadStatusAndInfo(string outfilename)
 {
     DRSStreamOpen(outfilename);
     char ifDRSformat[5];
-    DRSinput.read((char*)&ifDRSformat[0],5*sizeof(char));
+    DRSinput.read((char*)&ifDRSformat[0],4*sizeof(char));
     if (strcmp(ifDRSformat,"EHDR")==0) typeofDRS=DRS4;
     else
     {
@@ -86,7 +86,7 @@ bool DRSread::DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short ns
         DRSinput.clear();
         DRSinput.seekg(mark,ios::beg);
     }
-    Nevent = event_serial+1;
+
     DRSinput.read(&buffer[0],4*sizeof(char));
     buffer[4] = '\0';
 #ifdef DEBUG_STRUCT
@@ -102,6 +102,7 @@ bool DRSread::DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short ns
         cout << " B2 " << buffer /*<< flush <<  endl*/;
 #endif
     }
+    Nevent = event_serial+1;
 #ifdef DEBUG_STRUCT
     cout << " event_serial " << event_serial/* << endl*/;
 #endif
@@ -129,6 +130,11 @@ bool DRSread::DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short ns
         DRSinput.seekg(-4*sizeof(char),ios::cur);
         return false;
     }
+}
+
+void DRSread::DRSFileEnd()
+{
+    DRSStreamClose();
 }
 
 void DRSread::DRS4read(string outfilename)
@@ -176,9 +182,15 @@ void DRSread::DRSStreamOpen(string filename)
         DRSStreamClose();
         exit(1);
     }
+#ifdef DEBUG
+    cout << " file open " << endl;
+#endif
 }
 
 void DRSread::DRSStreamClose()
 {
+#ifdef DEBUG
+    cout << " file close " << endl;
+#endif
     DRSinput.close();
 }

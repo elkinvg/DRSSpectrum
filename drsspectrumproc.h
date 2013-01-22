@@ -6,6 +6,7 @@
 #ifndef __MINGW32__
 #include <root/TH1F.h>
 #include <root/TCanvas.h>
+#include <root/TGraph.h>
 #endif
 class DRSSpectrumProc: public DRSread, public DRSSignalProc
 {
@@ -19,22 +20,26 @@ public:
 #ifndef __MINGW32__
     TH1F *HistSpectr;
     TCanvas *canvas;
-
+    TGraph *graph;
 #endif
+
     bool autodetect;
     bool onlydetect;
     bool autonameOutFile;
     int num_channels;
     int work_channel;
+    bool onlinemode;
+    bool fileopenflag;
 
 
     void SetOutFileName(string);
     void SetNumberOfBins(unsigned int);
     void GetSpectumOffline(string filename , int type = DRS4);
     void CreateSimpleHist(std::vector<float>& signal);
+    void CreatIntegralGraph(string filename, int type = DRS4);
 private:
     void spectrinit();
-    bool canvasflag,HistSpectrflag;
+    bool canvasflag,HistSpectrflag,graphflag;
     string OutFileName;
     int NBins;
 };

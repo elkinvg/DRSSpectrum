@@ -21,6 +21,7 @@ public:
     void SetMinMaxValOfSignal(float min,float max);
 
     float getsignal(unsigned short *n_amplitudes, float *n_times);
+    void getIntegralSignal(float *int_signal);
     void autoSignalDetectKusskoff(const unsigned short *k_amplitudes, bool endfile); // if end = true
 
 private:

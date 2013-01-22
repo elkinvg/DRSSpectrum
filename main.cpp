@@ -19,6 +19,7 @@ bool onlydetect=false;
 bool inputparameters=false;
 bool outputfileflag=false;
 bool rootapplicationflag=true;
+bool graphintegralsignal=false;
 
 
 
@@ -54,7 +55,7 @@ int fromStr(const std::string aS)
         return _res;
 }
 
-static const char *optString = "mho:1:2:dab:r";
+static const char *optString = "mho:1:2:dab:rg";
 static const struct option longOpts[] = {
     {"help", 0, 0, 'h'},
     {"oneline-mode", 0, 0, 'm'},
@@ -65,6 +66,7 @@ static const struct option longOpts[] = {
     {"only-detect", 0, 0, 'd'},
     {"amplitute", 0, 0, 'a'},
     {"root-application", 0, 0, 'r'},
+    {"graph-integral",0, 0,'g'},
     {0, 0, 0, 0}
 };
 void help()
@@ -127,6 +129,9 @@ int main(int argc, char** argv)
         case 'r':
             rootapplicationflag=false;
             break;
+        case 'g':
+            graphintegralsignal = true;
+            break;
 
         case 'd':
             onlydetect = true;
@@ -150,6 +155,8 @@ int main(int argc, char** argv)
         if(onlydetect)
         {
             cerr << " с параметром -d не должно быть дополнительных аргументов" << endl;
+            onlydetect = false;
+            graphintegralsignal = false;
         }
 
 //        tmpvalue=string(argv[optind]);
@@ -213,6 +220,7 @@ int main(int argc, char** argv)
         if(onlydetect)
         {
             spectrum = new DRSSpectrumProc(onlydetect);
+            if(!graphintegralsignal) rootapplicationflag = false;
         }
         else
         {
@@ -220,6 +228,15 @@ int main(int argc, char** argv)
         }
     }
 
+    if (graphintegralsignal)
+    {
+        if(outputfileflag) spectrum->SetOutFileName(NameOutputFile);
+        if (amplitudekuskoffmode) spectrum->SetModeIntegral(amplitudekuskoffmode);
+        if(NumOfBins>0) spectrum->SetNumberOfBins(NumOfBins);
+        if(rootapplicationflag) UseApp();
+        spectrum->CreatIntegralGraph(argv[optind]);
+        if(rootapplicationflag) RunApp();
+    }
     if(!oneline_mode)
     {
         if(outputfileflag) spectrum->SetOutFileName(NameOutputFile);

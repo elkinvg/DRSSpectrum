@@ -22,7 +22,7 @@ public:
     void DRSFileReadStatusAndInfo();
     void DRSFileSeekBegin();
     bool DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short int nsamles=1024);
-
+    void DRSFileEnd();
     int typeofDRS;
 private:
     unsigned long int sizeoffile;

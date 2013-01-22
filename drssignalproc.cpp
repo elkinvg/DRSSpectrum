@@ -9,6 +9,17 @@ DRSSignalProc::DRSSignalProc()
     init();
 }
 
+void DRSSignalProc::init()
+{
+    posorneg = -1; // positive = 1 ; negative = -1;
+    VoltMode = 0.5; //-0.5 <> 0.5 V = 0.5 ; 0 <> 1 = 0;
+    factor = 1.;
+    kuskoff_amplitude=false;
+    EventSN = 0;
+    MinValOfSignal=0;
+    MaxValOfSignal=0;
+}
+
 void DRSSignalProc::SetModeIntegral(bool SetMode)
 {
     kuskoff_amplitude = SetMode;
@@ -109,6 +120,11 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
     return signal;
 }
 
+void DRSSignalProc::getIntegralSignal(float *int_signal)
+{
+    for(int i=0;i<numsampl;i++) int_signal[i] = sumamp[i];
+}
+
 void DRSSignalProc::SetFactor(float SetFactorAValue, float SetFactorBValue)
 {
     // y = factorA*x + factorB;
@@ -134,7 +150,7 @@ void DRSSignalProc::autoSignalDetectKusskoff(const unsigned short *k_amplitudes,
 {
     //int eventnum;
     int  ready_to_overflow = 0, overflow = 0;
-    for ( int i = 0; i < 1024; i++ )
+    for ( int i = 0; i < numsampl; i++ )
     {
         float amp =  k_amplitudes[i]/65535.-0.5;
         if(overflow) {
@@ -156,24 +172,13 @@ void DRSSignalProc::autoSignalDetectKusskoff(const unsigned short *k_amplitudes,
 
         sumamp[i] += amp/numsampl;
 
-        EventSN++;
-    }
+
+    }EventSN++;
 
     if (!endfile) return;
 
     autoSignalDetectKusskoffProc(EventSN);
     EventSN=0;
-}
-
-void DRSSignalProc::init()
-{
-    posorneg = -1; // positive = 1 ; negative = -1;
-    VoltMode = 0.5; //-0.5 <> 0.5 V = 0.5 ; 0 <> 1 = 0;
-    factor = 1.;
-    kuskoff_amplitude=false;
-    EventSN = 0;
-    MinValOfSignal=0;
-    MaxValOfSignal=0;
 }
 
 void DRSSignalProc::autoSignalDetectKusskoffProc(int eventnum)
