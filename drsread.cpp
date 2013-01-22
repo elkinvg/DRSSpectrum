@@ -137,7 +137,7 @@ void DRSread::DRS4read(string outfilename)
     ifDRSformat[4] = '\0';
     if (typeofDRS==DRS4i)
     {
-        DRSinput.read((char*)&ifDRSformat[0],5*sizeof(char));
+        DRSinput.read((char*)&ifDRSformat[0],4*sizeof(char));
         if (strcmp(ifDRSformat,"EHDR")!=0)
         {
             cerr << "File format error! (Not DRS4 format)" << endl;
