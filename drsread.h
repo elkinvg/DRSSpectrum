@@ -11,20 +11,23 @@ class DRSread
 public:
     DRSread();
     /*virtual */~DRSread();
-    ifstream DRSinput;
+
     long int Nevent;
     bool endfile;
-    ios::pos_type mark;
-    string FileDataName;
 
-    /*virtual */void DRSFileReadStatusAndInfo(string outfilename);
-    /*virtual */void DRSFileReadStatusAndInfo(string outfilename,int type);
+    void DRSFileReadStatusAndInfo(string outfilename);
+    void DRSFileReadStatusAndInfo(string outfilename,int type);
     void DRSFileReadStatusAndInfo();
     void DRSFileSeekBegin();
+
     bool DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short int nsamles=1024);
     void DRSFileEnd();
-    int typeofDRS;
+
 private:
+    int typeofDRS;
+    ios::pos_type mark;
+    ifstream DRSinput;
+    string FileDataName;
     unsigned long int sizeoffile;
     bool ifupdatefile; // if file updated = true
     void DRS4read(string outfilename);

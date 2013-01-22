@@ -101,8 +101,9 @@ bool DRSread::DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short ns
 #ifdef DEBUG_STRUCT
         cout << " B2 " << buffer /*<< flush <<  endl*/;
 #endif
+        Nevent = event_serial+1;
     }
-    Nevent = event_serial+1;
+
 #ifdef DEBUG_STRUCT
     cout << " event_serial " << event_serial/* << endl*/;
 #endif
