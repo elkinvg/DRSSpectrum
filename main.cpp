@@ -23,6 +23,7 @@ bool rootapplicationflag=true;
 
 
 
+
 string NameOutputFile;
 bool amplitudekuskoffmode=false; // amplitude = true; charge = false
 unsigned short int get_noise_min,get_noise_max,get_signal_min, get_signal_max;
@@ -77,6 +78,7 @@ void help()
     cout << " -a run with amplitude mode" << endl;
     cout << " -r run without root aplication " << endl;
 
+
     exit(0);
 }
 
@@ -124,7 +126,6 @@ int main(int argc, char** argv)
 
         case 'r':
             rootapplicationflag=false;
-//            cout << "\e[1;33m \e[40m Use CTRL+C to exit!!! \E[0m" << endl;
             break;
 
         case 'd':
@@ -249,6 +250,7 @@ void UseApp()
 #ifndef __MINGW32__
     myapp = new TApplication("App",0,0);
     cout << "\e[1;33m \e[40m Use CTRL+C to exit!!! \E[0m" << endl;
+
 #endif
 }
 
