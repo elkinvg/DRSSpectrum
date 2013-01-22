@@ -183,7 +183,7 @@ void DRSSignalProc::autoSignalDetectKusskoff(const unsigned short *k_amplitudes,
         if(overflow)
             amp += 1.;
 
-        sumamp[i] += amp/numsampl;
+        sumamp[i] += amp/*/numsampl*/;
 
 
     }EventSN++;
