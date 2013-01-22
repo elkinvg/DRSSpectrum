@@ -39,6 +39,7 @@ void RunApp();
 float getfactor=0;     //
 float getfactorB=0;    //  y = factor*x + factorB
 unsigned int NumOfBins=0;
+const int NumSamples=1024;
 
 #ifndef __MINGW32__
 TApplication *myapp;
@@ -163,28 +164,28 @@ int main(int argc, char** argv)
         int tmpval;
         tmpval = fromStr(string(argv[optind+1]));
 
-        if(tmpval<0 || tmpval>numsampl)
+        if(tmpval<0 || tmpval>NumSamples)
         {
             cerr << " error parameters " << endl;
             exit(1);
         }
         get_noise_min = (unsigned short int)tmpval;
         tmpval = fromStr(argv[optind+2]);
-        if(tmpval<0 || tmpval>numsampl)
+        if(tmpval<0 || tmpval>NumSamples)
         {
             cerr << " error parameters " << endl;
             exit(1);
         }
         get_noise_max = (unsigned short int)tmpval;
         tmpval = fromStr(argv[optind+3]);
-        if(tmpval<0 || tmpval>numsampl)
+        if(tmpval<0 || tmpval>NumSamples)
         {
             cerr << " error parameters " << endl;
             exit(1);
         }
         get_signal_min = (unsigned short int)tmpval;
         tmpval = fromStr(argv[optind+4]);
-        if(tmpval<0 || tmpval>numsampl)
+        if(tmpval<0 || tmpval>NumSamples)
         {
             cerr << " error parameters " << endl;
             exit(1);

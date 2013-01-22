@@ -12,6 +12,8 @@ DRSread::DRSread()
 {
     sizeoffile = 0;
     FileDataName = "NULL";
+    nsamles = 1024;
+    NumberOfChannels=1;
 }
 
 
@@ -75,7 +77,12 @@ void DRSread::DRSFileSeekBegin()
     endfile = false;
 }
 
-bool DRSread::DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short nsamles)
+int DRSread::GetNumberOfChannels()
+{
+    return NumberOfChannels;
+}
+
+bool DRSread::DRSGetFrame(unsigned short *n_amplitudes, float *n_times, bool readflag)
 {
     // return true если последний блок в фрейме
     // return false если конец файла, или не весь фрейм прочитан (следующий канал)
@@ -107,7 +114,8 @@ bool DRSread::DRSGetFrame(unsigned short *n_amplitudes, float *n_times, short ns
 #ifdef DEBUG_STRUCT
     cout << " event_serial " << event_serial/* << endl*/;
 #endif
-    DRSinput.read((char*)&n_amplitudes[0],nsamles*sizeof(short int));
+    if (readflag) DRSinput.read((char*)&n_amplitudes[0],nsamles*sizeof(short int));
+    else DRSinput.seekg(nsamles*sizeof(short int),ios::cur);
     mark = DRSinput.tellg();
     DRSinput.read((char*)&buffer[0],4*sizeof(char));
     if (!DRSinput)
@@ -151,6 +159,38 @@ void DRSread::DRS4read(string outfilename)
             DRSStreamClose();
             exit(1);
         }
+        else
+        {
+            DRSinput.seekg((6+nsamles+nsamles/2)*sizeof(float),ios::cur);
+            DRSinput.read((char*)&ifDRSformat[0],4*sizeof(char));
+            ifDRSformat[4] = '\0';
+            if (strcmp(ifDRSformat,"EHDR")==0) NumberOfChannels=1;
+            else
+            {
+                DRSinput.seekg((nsamles/2)*sizeof(float),ios::cur);
+                DRSinput.read((char*)&ifDRSformat[0],4*sizeof(char));
+                ifDRSformat[4] = '\0';
+                if (strcmp(ifDRSformat,"EHDR")==0) NumberOfChannels=2;
+                else
+                {
+                    DRSinput.seekg((nsamles/2)*sizeof(float),ios::cur);
+                    DRSinput.read((char*)&ifDRSformat[0],4*sizeof(char));
+                    ifDRSformat[4] = '\0';
+                    if (strcmp(ifDRSformat,"EHDR")==0) NumberOfChannels=3;
+                    {
+                        DRSinput.seekg((nsamles/2)*sizeof(float),ios::cur);
+                        DRSinput.read((char*)&ifDRSformat[0],4*sizeof(char));
+                        ifDRSformat[4] = '\0';
+                        if (strcmp(ifDRSformat,"EHDR")==0) NumberOfChannels=4;
+                        else cerr << " Channels more than 4 " << endl;
+                    }
+                }
+            }
+
+        }
+#ifdef DEBUG
+        cout << "NumberOfChannels= " << NumberOfChannels << endl;
+#endif
         DRSinput.seekg(ios::beg);
         typeofDRS==DRS4;
     }

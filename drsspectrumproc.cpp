@@ -77,6 +77,7 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
     {
         DRSFileReadStatusAndInfo(filename,type);
         fileopenflag = true;
+        num_channels = GetNumberOfChannels();
     }
 #ifndef __MINGW32__
     HistSpectr = new TH1F;
@@ -94,8 +95,11 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
         {
             if(type==DRS4)
             {
-                endframe = DRSGetFrame(&amp[0],&times[0]);
-                /*if (autodetect) */autoSignalDetectKusskoff(&amp[0],endfile);
+                if (num_channels==1)
+                {
+                    endframe = DRSGetFrame(&amp[0],&times[0]);
+                    /*if (autodetect) */autoSignalDetectKusskoff(&amp[0],endfile);
+                }
                 if (endframe) continue;
             }
         }

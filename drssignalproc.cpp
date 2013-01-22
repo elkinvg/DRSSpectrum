@@ -18,6 +18,9 @@ void DRSSignalProc::init()
     EventSN = 0;
     MinValOfSignal=0;
     MaxValOfSignal=0;
+    numsampl = 1024;
+    sumamp.clear();
+    for (int i=0;i<numsampl;i++) sumamp.push_back(0);
 }
 
 void DRSSignalProc::SetModeIntegral(bool SetMode)
@@ -143,6 +146,16 @@ void DRSSignalProc::SetMinMaxValOfSignal(float min, float max)
 {
     MinValOfSignal= min;
     MaxValOfSignal = max;
+}
+
+void DRSSignalProc::SetNumOfSamples(int numofsampes)
+{
+    if (numofsampes!=numsampl)
+    {
+        sumamp.clear();
+        numsampl=numofsampes;
+        for(int i=0;i<numsampl;i++) sumamp.push_back(0);
+    }
 }
 
 
