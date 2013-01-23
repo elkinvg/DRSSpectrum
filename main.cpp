@@ -73,10 +73,10 @@ static const struct option longOpts[] = {
 void help()
 {
     cout << "Usage:\t drsspectrum INPUTFILE [noise_min noise max signal_min signal_max]" <<"\n\t [[-o|--outfile] outfile] " /*<< endl*/;
-    cout << "[[-n|--number-of-canal] Number_of_canal] [[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
+    cout << /*"[[-n|--number-of-canal] Number_of_canal]*/ "[[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
     cout<< "\t [-d|--only-detect] [-k|--amplitute] [-r|--without-root-application]"  << endl;
     cout << endl;
-    cout << " -a -b Integral = factor*X + shift; factor is -a shift is -b " << endl;
+    cout << " -a -b: Integral = factor*(X + shift); factor is -a shift is -b " << endl;
     cout << " -d detect noise_min noise max signal_min signal_max and exit " << endl;
     cout << " -k run with amplitude mode. Default mode is charge" << endl;
     cout << " -r run without root aplication " << endl;
