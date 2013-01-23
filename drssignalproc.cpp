@@ -31,10 +31,11 @@ void DRSSignalProc::SetModeIntegral(bool SetMode)
 
 float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
 {
-    float amps[1024];
+    float amps[numsampl];
     int eventnum=0;
     float noise = 0;
     float signal = 0;
+    EventSN++;
     for (int i=0;i<numsampl;i++)
     {
         amps[i] = /*factor**/(n_amplitudes[i]/65535.- VoltMode)/* + factorB*/;
@@ -87,7 +88,7 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
                 if((maxpos < 5) || (maxpos > 45))
                 {
 #ifdef DEBUG
-                    cout << "Frame " << eventnum << ": no reasonable max found" << endl;
+                    cout << "Frame " << EventSN << ": no reasonable max found" << endl;
 #endif
                     return -1111;
                 }

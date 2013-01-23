@@ -136,8 +136,9 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
                     if (tmpsignal>tmpmaxsignal) tmpmaxsignal = tmpsignal;
                     if (tmpsignal<tmpminsignal) tmpminsignal = tmpsignal;
                 }
+                tmpI++;
             }
-            tmpI++;
+
             if (endframe) continue;
         }
     }
