@@ -56,30 +56,31 @@ int fromStr(const std::string aS)
         return _res;
 }
 
-static const char *optString = "mho:1:2:dab:rg";
+static const char *optString = "mho:a:b:n:dkrg";
 static const struct option longOpts[] = {
     {"help", 0, 0, 'h'},
     {"oneline-mode", 0, 0, 'm'},
     {"outfile", 1, 0, 'o'},
-    {"factora", 1, 0, '1'},
-    {"factorb", 1, 0, '2'},
-    {"number-of-bins", 1, 0, 'b'},
+    {"a-factor", 1, 0, 'a'},
+    {"b-shift", 1, 0, 'b'},
+    {"number-of-canal", 1, 0, 'n'},
     {"only-detect", 0, 0, 'd'},
-    {"amplitute", 0, 0, 'a'},
-    {"root-application", 0, 0, 'r'},
+    {"amplitute", 0, 0, 'k'},
+    {"without-root-application", 0, 0, 'r'},
     {"graph-integral",0, 0,'g'},
     {0, 0, 0, 0}
 };
 void help()
 {
     cout << "Usage:\t drsspectrum INPUTFILE [noise_min noise max signal_min signal_max]" <<"\n\t [[-o|--outfile] outfile] " /*<< endl*/;
-    cout << "[[-n|--number-of-bins] Number_of_bins] [[-1|--factora] factora] [[-2|--factorb] factorb]" << endl;
-    cout<< "\t [-d|--only-detect] [-a|--amplitute] [-r|--root-application]"  << endl;
+    cout << "[[-n|--number-of-canal] Number_of_canal] [[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
+    cout<< "\t [-d|--only-detect] [-k|--amplitute] [-r|--without-root-application]"  << endl;
     cout << endl;
-    cout << " -1 -2 Integral = factora*X + factorb; factora is -1 factor b is -2 " << endl;
+    cout << " -a -b Integral = factor*X + shift; factor is -a shift is -b " << endl;
     cout << " -d detect noise_min noise max signal_min signal_max and exit " << endl;
-    cout << " -a run with amplitude mode" << endl;
+    cout << " -a run with amplitude mode. Default mode is charge" << endl;
     cout << " -r run without root aplication " << endl;
+    cout << " -g plot of the integral signal " << endl;
 
 
     exit(0);
@@ -96,7 +97,6 @@ int main(int argc, char** argv)
     while( opt != -1 ) {
         switch( opt ) {
         case 'h':
-            cout << " help: " << endl;
             help();
             break;
         case 'o':
@@ -109,21 +109,21 @@ int main(int argc, char** argv)
             cout << "***********************************" << endl;
             oneline_mode = true;
             break;
-        case '1':
+        case 'a':
             getfactor = atof(argv[optind-1]);
             if (getfactor==0) cout << argv[optind-1] <<" factor a must be float " << endl;
             break;
 
-        case '2':
+        case 'b':
             getfactorB = atof(argv[optind-1]);
             if (getfactorB==0) cout << argv[optind-1] <<" factor b must be float " << endl;
             break;
 
-        case 'b':
+        case 'n':
             NumOfBins = atoi(argv[optind-1]);
             break;
 
-        case 'a':
+        case 'k':
             amplitudekuskoffmode=true;
             break;
 
@@ -142,6 +142,7 @@ int main(int argc, char** argv)
 
             exit(0);
         default:
+            help();
             exit(0);
         }
         opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
