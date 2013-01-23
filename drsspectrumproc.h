@@ -37,6 +37,7 @@ public:
     void GetSpectumOffline(string filename , int type = DRS4);
     void CreateSimpleHist(std::vector<float>& signal);
     void CreatIntegralGraph(string filename, int type = DRS4);
+    void DetectPolarityOfSignal();
 private:
     void spectrinit();
     bool canvasflag,HistSpectrflag,graphflag;

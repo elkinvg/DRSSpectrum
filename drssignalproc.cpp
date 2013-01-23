@@ -86,8 +86,10 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
 
                 if((maxpos < 5) || (maxpos > 45))
                 {
+#ifdef DEBUG
                     cout << "Frame " << eventnum << ": no reasonable max found" << endl;
-                    return -1;
+#endif
+                    return -1111;
                 }
 
                 for(int i = max(0,maxpos - 8); i<min(50, maxpos + 9); i++) {
@@ -112,14 +114,14 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
             B = B/demoninator;
             C = C/demoninator;
 
-            signal = -B*B/4/A + C - noise;
+            signal = B*B/4/A + C + noise;
 
             //printf("Parabulum: %g %g %g\n", A, B, C);
     }
     else
     for (int i=signal_min; i<signal_max; i++)
         signal += (((amps[i]/2.+amps[i+1]/2.)- noise)*(n_times[i+1]-n_times[i]));
-    signal = factor*signal + factorB;
+    signal = posorneg*factor*signal + factor*factorB;
     return signal;
 }
 
@@ -165,7 +167,7 @@ void DRSSignalProc::autoSignalDetectKusskoff(const unsigned short *k_amplitudes,
     int  ready_to_overflow = 0, overflow = 0;
     for ( int i = 0; i < numsampl; i++ )
     {
-        float amp =  k_amplitudes[i]/65535.-0.5;
+        float amp =  (float)k_amplitudes[i]/65535.-VoltMode;
         if(overflow) {
             if(amp > 0) {
                 overflow = 0;
@@ -262,6 +264,8 @@ void DRSSignalProc::autoSignalDetectKusskoffProc(int eventnum)
     noise_min = 16+8*noise_min;
     noise_max = 16+8*noise_max;
 
-    factor = 1*factor;
-    if(integrall < 0) factor = -1*factor;
+
+    if(integrall < 0) posorneg=-1;
+    else posorneg=1;
+    //factor = posorneg*factor;
 }

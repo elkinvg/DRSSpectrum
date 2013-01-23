@@ -1,6 +1,7 @@
 #include "drsspectrumproc.h"
 #include <iostream>
 #include <vector>
+#include <stdlib.h>
 
 DRSSpectrumProc::DRSSpectrumProc()
 {
@@ -109,6 +110,14 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
             return;
         }
     }
+    else
+    {
+        if(type==DRS4)
+        {
+            DRSFileSeekBegin();
+            DetectPolarityOfSignal();
+        }
+    }
     DRSFileSeekBegin();
     int tmpI=0;
     while(!endfile)
@@ -117,12 +126,16 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
         {
             endframe = DRSGetFrame(&amp[0],&times[0]);
             tmpsignal = getsignal(&amp[0],&times[0]);
-            signalval.push_back(tmpsignal);
-            if (tmpI==0) tmpmaxsignal = tmpminsignal = tmpsignal;
-            else
+            if(tmpsignal!=-1111)
             {
-                if (tmpsignal>tmpmaxsignal) tmpmaxsignal = tmpsignal;
-                if (tmpsignal<tmpminsignal) tmpminsignal = tmpsignal;
+                signalval.push_back(tmpsignal);
+                if (tmpI==0) tmpmaxsignal = tmpminsignal = tmpsignal;
+
+                else
+                {
+                    if (tmpsignal>tmpmaxsignal) tmpmaxsignal = tmpsignal;
+                    if (tmpsignal<tmpminsignal) tmpminsignal = tmpsignal;
+                }
             }
             tmpI++;
             if (endframe) continue;
@@ -216,5 +229,39 @@ void DRSSpectrumProc::CreatIntegralGraph(string filename, int type)
         DRSFileEnd();
         fileopenflag=false;
     }
+}
+
+void DRSSpectrumProc::DetectPolarityOfSignal()
+{
+    float amp;
+    unsigned short int k_amplitudes[numsampl];
+    float times[numsampl];
+    float localSumAmp[numsampl];
+    int localNumEvent=0;
+    float integrall=0;
+    bool endframe;
+    while(!endfile)
+    {
+
+            if (num_channels==1)
+            {
+                endframe = DRSGetFrame(&k_amplitudes[0],&times[0]);
+                for ( int i = 0; i < numsampl; i++ )
+                {
+                    if (localNumEvent==0) localSumAmp[i]=0;
+                    amp =  (float)k_amplitudes[i]/65535.-VoltMode;
+                    localSumAmp[i] += amp;
+                }
+                localNumEvent++;
+                if (!endfile) continue;
+                for(int i=16;i<numsampl-16;i++)
+                {
+                    integrall += localSumAmp[i]/localNumEvent;
+                }
+                if(integrall < 0) posorneg=-1;
+                else posorneg=1;
+
+            }
+        }
 }
 

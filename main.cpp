@@ -36,7 +36,7 @@ void ctrlplusc(int sig);
 void UseApp();
 void RunApp();
 
-float getfactor=0;     //
+float getfactor=1;     //
 float getfactorB=0;    //  y = factor*x + factorB
 unsigned int NumOfBins=0;
 const int NumSamples=1024;
@@ -78,7 +78,7 @@ void help()
     cout << endl;
     cout << " -a -b Integral = factor*X + shift; factor is -a shift is -b " << endl;
     cout << " -d detect noise_min noise max signal_min signal_max and exit " << endl;
-    cout << " -a run with amplitude mode. Default mode is charge" << endl;
+    cout << " -k run with amplitude mode. Default mode is charge" << endl;
     cout << " -r run without root aplication " << endl;
     cout << " -g plot of the integral signal " << endl;
 
