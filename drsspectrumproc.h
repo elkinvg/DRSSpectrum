@@ -39,6 +39,7 @@ public:
     void CreatIntegralGraph(string filename, int type = DRS4);
     void DetectPolarityOfSignal();
 private:
+    string resdir;
     void spectrinit();
     bool canvasflag,HistSpectrflag,graphflag;
     string OutFileName;

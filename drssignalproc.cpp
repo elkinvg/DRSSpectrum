@@ -122,7 +122,7 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
     else
     for (int i=signal_min; i<signal_max; i++)
         signal += (((amps[i]/2.+amps[i+1]/2.)- noise)*(n_times[i+1]-n_times[i]));
-    signal = posorneg*factor*signal + factor*factorB;
+    signal = posorneg*factor*signal + /*factor**/factorB;
     return signal;
 }
 

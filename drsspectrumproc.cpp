@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 DRSSpectrumProc::DRSSpectrumProc()
 {
@@ -44,6 +45,7 @@ void DRSSpectrumProc::spectrinit()
     graphflag=false;
     onlinemode = false;
     fileopenflag = false;
+    resdir="res/";
 }
 
 DRSSpectrumProc::~DRSSpectrumProc()
@@ -58,7 +60,8 @@ DRSSpectrumProc::~DRSSpectrumProc()
 void DRSSpectrumProc::SetOutFileName(string name)
 {
     autonameOutFile=false;
-    OutFileName = name;
+    if(name.find_last_of("/")==name.npos) OutFileName = resdir+name;
+    else OutFileName = name;
 }
 
 void DRSSpectrumProc::SetNumberOfBins(unsigned int N)
@@ -149,10 +152,23 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
 #endif
 
     string InFileName;
+    string tmpdirect;
     if(autonameOutFile)
     {
-        InFileName = filename.substr(0,filename.find_last_of("."));
-        OutFileName = InFileName+".root";
+        tmpdirect = filename.substr(0,filename.find_last_of("/")+1);
+        resdir = tmpdirect+resdir;
+#ifdef unix
+        if (access(&resdir.c_str()[0],0)!=0) mkdir(&resdir.c_str()[0],0777);
+#endif
+        size_t of = filename.find_last_of(".",filename.npos);
+        size_t fi = filename.find_last_of("/",filename.npos)+1;
+        size_t len = of-fi;
+        if (of<=fi) OutFileName = resdir+"tmp.root";
+        else
+        {
+            InFileName = filename.substr(fi,len);
+            OutFileName = resdir+InFileName+".root";
+        }
     }
     CreateSimpleHist(signalval);
     if (fileopenflag) DRSFileEnd();
@@ -215,11 +231,20 @@ void DRSSpectrumProc::CreatIntegralGraph(string filename, int type)
     getIntegralSignal(&IntegralSignal[0]);
 
     string outgraphfile;
+    string tmpdirect;
     float N[numsampl];
     if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
     if (!graphflag)
     {
-        outgraphfile = filename.substr(0,filename.find_last_of(".")) + "-integral.png";
+        tmpdirect = filename.substr(0,filename.find_last_of("/")+1);
+        resdir = tmpdirect+resdir;
+#ifdef unix
+        if (access(&resdir.c_str()[0],0)!=0) mkdir(&resdir.c_str()[0],0777);
+#endif
+        size_t of = filename.find_last_of(".",filename.npos);
+        size_t fi = filename.find_last_of("/",filename.npos)+1;
+        size_t len = of-fi;
+        outgraphfile = resdir+filename.substr(fi,len) + "-integral.png";
         for (int i=0;i<numsampl;i++) N[i]=(float)i;
         graph = new TGraph(numsampl,N,IntegralSignal);
         graph->Draw("ALP");
