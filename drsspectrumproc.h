@@ -43,6 +43,8 @@ private:
     void spectrinit();
     bool canvasflag,HistSpectrflag,graphflag;
     string OutFileName;
+    string OutFileNameHist;
+    string InputFileName;
     int NBins;
 };
 

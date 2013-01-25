@@ -57,6 +57,7 @@ void DRSSpectrumProc::spectrinit()
     onlinemode = false;
     fileopenflag = false;
     resdir="res/";
+    InputFileName = "DRS";
 }
 
 DRSSpectrumProc::~DRSSpectrumProc()
@@ -71,8 +72,8 @@ DRSSpectrumProc::~DRSSpectrumProc()
 void DRSSpectrumProc::SetOutFileName(string name)
 {
     autonameOutFile=false;
-    if(name.find_last_of("/")==name.npos) OutFileName = resdir+name;
-    else OutFileName = name;
+    if(name.find_last_of("/")==name.npos) OutFileNameHist = resdir+name;
+    else OutFileNameHist = name;
 }
 
 void DRSSpectrumProc::SetNumberOfBins(unsigned int N)
@@ -178,30 +179,31 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
         else
         {
             InFileName = filename.substr(fi,len);
+            InputFileName = InFileName;
             OutFileName = resdir+InFileName+".root";
         }
     }
     //int Tmpsize = signalval.size();
     //cout << Tmpsize << " <<<<Tmpsize" << endl;
 
-#ifndef __MINGW32__
-    gROOT->ProcessLine("#include <vector>");
-    vector<float> SummarySignal;
-    getIntegralSignal(SummarySignal);
-    TFile fData((resdir+InFileName+"-tree.root").c_str(),"RECREATE");
-    TTree *SignalData = new TTree("DRSSignal","Signal DRS");
-    SignalData->Branch("SummarySignal",&SummarySignal);
-    SignalData->Branch("Sigfortree",&signalval);
-    SignalData->Branch("Noise_min",&noise_min,"noise_min/s");
-    SignalData->Branch("Noise_max",&noise_max,"noise_max/s");
-    SignalData->Branch("Signal_min",&signal_min,"signal_min/s");
-    SignalData->Branch("Signal_max",&signal_max,"signal_max/s");
+//#ifndef __MINGW32__
+//    gROOT->ProcessLine("#include <vector>");
+//    vector<float> SummarySignal;
+//    getIntegralSignal(SummarySignal);
+//    TFile fData((resdir+InFileName+"-tree.root").c_str(),"RECREATE");
+//    TTree *SignalData = new TTree("DRSSignal","Signal DRS");
+//    SignalData->Branch("SummedSignal",&SummarySignal);
+//    SignalData->Branch("Charge",&signalval);
+//    SignalData->Branch("Noise_min",&noise_min,"noise_min/s");
+//    SignalData->Branch("Noise_max",&noise_max,"noise_max/s");
+//    SignalData->Branch("Signal_min",&signal_min,"signal_min/s");
+//    SignalData->Branch("Signal_max",&signal_max,"signal_max/s");
 
-    SignalData->Fill();
-    SignalData->Write();
-    fData.Close();
-    //delete sigfortree;
-#endif
+//    SignalData->Fill();
+//    SignalData->Write();
+//    fData.Close();
+//    //delete sigfortree;
+//#endif
     CreateSimpleHist(signalval);
     if (fileopenflag) DRSFileEnd();
 }
@@ -217,11 +219,41 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
     float maxBorder = ValuesOfBorders.second;
 
 
+    TTree *SignalData;
+    bool ifrootfile = true;
+    if (!autonameOutFile)
+    {
+        if (OutFileNameHist.substr(OutFileNameHist.find_first_of(".")+1)=="root") OutFileName = OutFileNameHist;
+        else { ifrootfile = false; OutFileName = OutFileNameHist;}
+    }
 #ifndef __MINGW32__
 
-    if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
+    gROOT->ProcessLine("#include <vector>");
+    TFile *fData;
 
-    if(!HistSpectrflag) {HistSpectr = new TH1F("DRS-hist","DRS-hist",NBins,minBorder,maxBorder); HistSpectrflag=true;}
+
+    vector<float> SummarySignal;
+    getIntegralSignal(SummarySignal);
+
+    if (ifrootfile)
+    {
+        fData =new TFile(OutFileName.c_str(),"RECREATE");
+        SignalData = new TTree("DRSSignal","Signal DRS");
+        //SignalData->Branch("SummedSignal",&SummarySignal);
+        SignalData->Branch("Charge",&signal);
+        SignalData->Branch("Noise_min",&noise_min,"noise_min/s");
+        SignalData->Branch("Noise_max",&noise_max,"noise_max/s");
+        SignalData->Branch("Signal_min",&signal_min,"signal_min/s");
+        SignalData->Branch("Signal_max",&signal_max,"signal_max/s");
+
+        SignalData->Fill();
+        SignalData->Write();
+    }
+
+
+    if (!canvasflag) { canvas = new TCanvas("DRS-Signal","DRS-Signal",1200,800); canvasflag =true;}
+
+    if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder,maxBorder); HistSpectrflag=true;}
 
 
     int N = signal.size();
@@ -230,8 +262,38 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
         HistSpectr->Fill(signal[i]);
     }
     HistSpectr->Draw();
-    canvas->SaveAs(OutFileName.c_str());
-    //HistSpectr->SaveAs(OutFileName);
+    if (ifrootfile) canvas->Write();
+    else canvas->SaveAs(OutFileName.c_str());
+
+    canvas->Destructor();
+    canvasflag=false;
+
+    if (ifrootfile)
+    {
+        if (!canvasflag) { canvas = new TCanvas("Summed","Summed",1200,800); canvasflag =true;}
+
+        TH1F *HistSummedSignal = new TH1F((InputFileName+"_summed").c_str(),(InputFileName+"_summed").c_str(),numsampl,0,numsampl);
+        for (int i=0;i<numsampl;i++) HistSummedSignal->SetBinContent(i,SummarySignal[i]);
+
+
+        HistSummedSignal->Draw();
+        canvas->Write();
+        HistSpectrflag=false;
+        fData->Close();
+        fData->Delete();
+    }
+
+    if (!canvasflag) { canvas = new TCanvas("DRS","DRS",1200,800); canvasflag =true;}
+
+    if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder,maxBorder); HistSpectrflag=true;}
+
+
+    N = signal.size();
+    for (int i=0;i<N;i++)
+    {
+        HistSpectr->Fill(signal[i]);
+    }
+    HistSpectr->Draw();
 
 #endif
     cout << "Hist save as " << OutFileName << endl;
@@ -266,9 +328,9 @@ void DRSSpectrumProc::CreatIntegralGraph(string filename, int type)
     string tmpdirect;
     float N[numsampl];
 #ifndef __MINGW32__
-    if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
     if (!graphflag)
     {
+            if (!canvasflag) { canvas = new TCanvas((InputFileName+"_Summed").c_str(),(InputFileName+"_Summed").c_str(),1200,800); canvasflag =true;}
         tmpdirect = filename.substr(0,filename.find_last_of("/")+1);
         resdir = tmpdirect+resdir;
 
@@ -278,9 +340,11 @@ void DRSSpectrumProc::CreatIntegralGraph(string filename, int type)
         size_t fi = filename.find_last_of("/",filename.npos)+1;
         size_t len = of-fi;
         outgraphfile = resdir+filename.substr(fi,len) + "-integral.png";
+        InputFileName = filename.substr(fi,len);
         for (int i=0;i<numsampl;i++) N[i]=(float)i;
         graph = new TGraph(numsampl,N,IntegralSignal);
         graph->Draw("ALP");
+        graph->SetTitle((InputFileName+"_Summed").c_str());
         canvas->SaveAs(outgraphfile.c_str());
     }
 #endif
