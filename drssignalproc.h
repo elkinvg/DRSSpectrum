@@ -23,6 +23,7 @@ public:
 
     float getsignal(unsigned short *n_amplitudes, float *n_times);
     void getIntegralSignal(float *int_signal);
+    void getIntegralSignal(std::vector<float>&);
     void autoSignalDetectKusskoff(const unsigned short *k_amplitudes, bool endfile); // if end = true
 
 private:

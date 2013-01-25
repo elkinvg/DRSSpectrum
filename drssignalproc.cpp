@@ -131,6 +131,11 @@ void DRSSignalProc::getIntegralSignal(float *int_signal)
     for(int i=0;i<numsampl;i++) int_signal[i] = sumamp[i];
 }
 
+void DRSSignalProc::getIntegralSignal(vector<float> &SummarySignal)
+{
+    SummarySignal = sumamp;
+}
+
 void DRSSignalProc::SetFactor(float SetFactorAValue, float SetFactorBValue)
 {
     // y = factorA*x + factorB;

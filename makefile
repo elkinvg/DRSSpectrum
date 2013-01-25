@@ -1,6 +1,6 @@
     ROOTFLAGS     = $(shell root-config --cflags)
     ROOTLIBS      = $(shell root-config --glibs)
-    TARGET        = drsspectrum
+    TARGET        = bindrsspectrum
     CC            = gcc
     CXX           = g++
     LINK          = g++
@@ -46,6 +46,11 @@ $(OBJDIR)/main.o: main.cpp
 
 clean: FORCE
 	$(DELFILE) ./SO/*.so ./SO/*.so* ./bin/*so ./obj/*.o *.h~ *.cpp~ *.d
+	
+install: insthomebin
+
+insthomebin: first
+	@cp $(BINDIR)/$(TARGET) $(HOME)/bin
 	
 remake: clean first
 remake_debug: clean debug

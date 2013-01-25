@@ -4,6 +4,17 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#ifdef unix
+#include <root/TFile.h>
+#include <root/TTree.h>
+#include <root/TROOT.h>
+#endif
+
+//struct Spectr {
+//    short noisemin;
+//    short noisemax;
+//};
+
 DRSSpectrumProc::DRSSpectrumProc()
 {
     spectrinit();
@@ -170,6 +181,27 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
             OutFileName = resdir+InFileName+".root";
         }
     }
+    //int Tmpsize = signalval.size();
+    //cout << Tmpsize << " <<<<Tmpsize" << endl;
+
+#ifndef __MINGW32__
+    gROOT->ProcessLine("#include <vector>");
+    vector<float> SummarySignal;
+    getIntegralSignal(SummarySignal);
+    TFile fData((resdir+InFileName+"-tree.root").c_str(),"RECREATE");
+    TTree *SignalData = new TTree("DRSSignal","Signal DRS");
+    SignalData->Branch("SummarySignal",&SummarySignal);
+    SignalData->Branch("Sigfortree",&signalval);
+    SignalData->Branch("Noise_min",&noise_min,"noise_min/s");
+    SignalData->Branch("Noise_max",&noise_max,"noise_max/s");
+    SignalData->Branch("Signal_min",&signal_min,"signal_min/s");
+    SignalData->Branch("Signal_max",&signal_max,"signal_max/s");
+
+    SignalData->Fill();
+    SignalData->Write();
+    fData.Close();
+    //delete sigfortree;
+#endif
     CreateSimpleHist(signalval);
     if (fileopenflag) DRSFileEnd();
 }
@@ -233,14 +265,15 @@ void DRSSpectrumProc::CreatIntegralGraph(string filename, int type)
     string outgraphfile;
     string tmpdirect;
     float N[numsampl];
+#ifndef __MINGW32__
     if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
     if (!graphflag)
     {
         tmpdirect = filename.substr(0,filename.find_last_of("/")+1);
         resdir = tmpdirect+resdir;
-#ifdef unix
+
         if (access(&resdir.c_str()[0],0)!=0) mkdir(&resdir.c_str()[0],0777);
-#endif
+
         size_t of = filename.find_last_of(".",filename.npos);
         size_t fi = filename.find_last_of("/",filename.npos)+1;
         size_t len = of-fi;
@@ -250,6 +283,7 @@ void DRSSpectrumProc::CreatIntegralGraph(string filename, int type)
         graph->Draw("ALP");
         canvas->SaveAs(outgraphfile.c_str());
     }
+#endif
     if(fileopenflag)
     {
         DRSFileEnd();
