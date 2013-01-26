@@ -144,6 +144,12 @@ void DRSSignalProc::SetFactor(float SetFactorAValue, float SetFactorBValue)
 
 }
 
+void DRSSignalProc::GetFactor(float &GetFactorAValue, float &GetFactorBValue)
+{
+    GetFactorAValue = factor;
+    GetFactorBValue = factorB;
+}
+
 void DRSSignalProc::GetMinMaxValOfSignal(std::pair<float, float> &minmax)
 {
     minmax.first = MinValOfSignal;

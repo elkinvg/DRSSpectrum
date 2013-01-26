@@ -17,6 +17,7 @@ public:
 
     void SetModeIntegral(bool);
     void SetFactor(float SetFactorAValue, float SetFactorBValue);
+    void GetFactor(float &GetFactorAValue, float &GetFactorBValue);
     void GetMinMaxValOfSignal(std::pair<float,float>&);
     void SetMinMaxValOfSignal(float min,float max);
     void SetNumOfSamples(int numofsampes);

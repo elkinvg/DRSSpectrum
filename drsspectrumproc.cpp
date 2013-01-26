@@ -183,27 +183,7 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
             OutFileName = resdir+InFileName+".root";
         }
     }
-    //int Tmpsize = signalval.size();
-    //cout << Tmpsize << " <<<<Tmpsize" << endl;
 
-//#ifndef __MINGW32__
-//    gROOT->ProcessLine("#include <vector>");
-//    vector<float> SummarySignal;
-//    getIntegralSignal(SummarySignal);
-//    TFile fData((resdir+InFileName+"-tree.root").c_str(),"RECREATE");
-//    TTree *SignalData = new TTree("DRSSignal","Signal DRS");
-//    SignalData->Branch("SummedSignal",&SummarySignal);
-//    SignalData->Branch("Charge",&signalval);
-//    SignalData->Branch("Noise_min",&noise_min,"noise_min/s");
-//    SignalData->Branch("Noise_max",&noise_max,"noise_max/s");
-//    SignalData->Branch("Signal_min",&signal_min,"signal_min/s");
-//    SignalData->Branch("Signal_max",&signal_max,"signal_max/s");
-
-//    SignalData->Fill();
-//    SignalData->Write();
-//    fData.Close();
-//    //delete sigfortree;
-//#endif
     CreateSimpleHist(signalval);
     if (fileopenflag) DRSFileEnd();
 }
@@ -226,6 +206,8 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
         if (OutFileNameHist.substr(OutFileNameHist.find_first_of(".")+1)=="root") OutFileName = OutFileNameHist;
         else { ifrootfile = false; OutFileName = OutFileNameHist;}
     }
+    float factor,shift;
+    GetFactor(factor,shift);
 #ifndef __MINGW32__
 
     gROOT->ProcessLine("#include <vector>");
@@ -245,13 +227,15 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
         SignalData->Branch("Noise_max",&noise_max,"noise_max/s");
         SignalData->Branch("Signal_min",&signal_min,"signal_min/s");
         SignalData->Branch("Signal_max",&signal_max,"signal_max/s");
+        SignalData->Branch("Factor",&factor,"factor/F");
+        SignalData->Branch("Shift",&shift,"shuft/F");
 
         SignalData->Fill();
         SignalData->Write();
     }
 
 
-    if (!canvasflag) { canvas = new TCanvas("DRS-Signal","DRS-Signal",1200,800); canvasflag =true;}
+    if (!canvasflag) { canvas = new TCanvas("DRS-Signal","DRS-Signal",800,600); canvasflag =true;}
 
     if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder,maxBorder); HistSpectrflag=true;}
 
@@ -270,7 +254,7 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
 
     if (ifrootfile)
     {
-        if (!canvasflag) { canvas = new TCanvas("Summed","Summed",1200,800); canvasflag =true;}
+        if (!canvasflag) { canvas = new TCanvas("Summed","Summed",800,600); canvasflag =true;}
 
         TH1F *HistSummedSignal = new TH1F((InputFileName+"_summed").c_str(),(InputFileName+"_summed").c_str(),numsampl,0,numsampl);
         for (int i=0;i<numsampl;i++) HistSummedSignal->SetBinContent(i,SummarySignal[i]);
@@ -281,9 +265,11 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
         HistSpectrflag=false;
         fData->Close();
         fData->Delete();
+        canvas->Destructor();
+        canvasflag=false;
     }
 
-    if (!canvasflag) { canvas = new TCanvas("DRS","DRS",1200,800); canvasflag =true;}
+    if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
 
     if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder,maxBorder); HistSpectrflag=true;}
 
