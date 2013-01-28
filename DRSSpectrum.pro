@@ -17,11 +17,11 @@ CONFIG(debug, debug|release) {
 
 unix {
 CONFIG(debug, debug|release) {
-     DEFINES += DEBUG
+     DEFINES += DEBUG}
+DEFINES += QTCREATOR
 INCLUDEPATH += -I/usr/local/include -pthread -m64 -I/usr/local/include/root
 LIBS += -L/usr/local/lib/root -lGpad -lHist -lGraf -lGraf3d -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lRIO -lNet -lThread -lCore -lCint -pthread -lm -ldl -rdynamic
 LIBS += -L/usr/local/lib
-}
 }
 
 SOURCES += main.cpp \

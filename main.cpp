@@ -10,7 +10,11 @@
 #include "drsspectrumproc.h"
 
 #ifndef __MINGW32__
+#ifdef QTCREATOR
 #include <root/TApplication.h>
+#else
+#include <TApplication.h>
+#endif
 #endif
 using namespace std;
 

@@ -4,9 +4,15 @@
 #include "drsread.h"
 
 #ifndef __MINGW32__
+#ifdef QTCREATOR
 #include <root/TH1F.h>
 #include <root/TCanvas.h>
 #include <root/TGraph.h>
+#else
+#include <TH1F.h>
+#include <TCanvas.h>
+#include <TGraph.h>
+#endif
 #endif
 class DRSSpectrumProc: public DRSread, public DRSSignalProc
 {
@@ -38,7 +44,11 @@ public:
     void CreateSimpleHist(std::vector<float>& signal);
     void CreatIntegralGraph(string filename, int type = DRS4);
     void DetectPolarityOfSignal();
+
+    void SetFactor(float SetFactor, float SetShift);
+    void GetFactor(float &GetFactor, float &GetShift);
 private:
+    float factor,shift;
     string resdir;
     void spectrinit();
     bool canvasflag,HistSpectrflag,graphflag;

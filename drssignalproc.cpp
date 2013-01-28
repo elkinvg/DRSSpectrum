@@ -13,7 +13,7 @@ void DRSSignalProc::init()
 {
     posorneg = -1; // positive = 1 ; negative = -1;
     VoltMode = 0.5; //-0.5 <> 0.5 V = 0.5 ; 0 <> 1 = 0;
-    factor = 1.;
+
     kuskoff_amplitude=false;
     EventSN = 0;
     MinValOfSignal=0;
@@ -122,7 +122,7 @@ float DRSSignalProc::getsignal(unsigned short *n_amplitudes, float *n_times)
     else
     for (int i=signal_min; i<signal_max; i++)
         signal += (((amps[i]/2.+amps[i+1]/2.)- noise)*(n_times[i+1]-n_times[i]));
-    signal = posorneg*factor*signal + /*factor**/factorB;
+    signal = posorneg/**factor*/*signal/* + factorB*/;
     return signal;
 }
 
@@ -136,19 +136,19 @@ void DRSSignalProc::getIntegralSignal(vector<float> &SummarySignal)
     SummarySignal = sumamp;
 }
 
-void DRSSignalProc::SetFactor(float SetFactorAValue, float SetFactorBValue)
-{
-    // y = factorA*x + factorB;
-    factor = SetFactorAValue;
-    factorB = SetFactorBValue;
+//void DRSSignalProc::SetFactor(float SetFactorAValue, float SetFactorBValue)
+//{
+//    // y = factorA*x + factorB;
+//    factor = SetFactorAValue;
+//    factorB = SetFactorBValue;
 
-}
+//}
 
-void DRSSignalProc::GetFactor(float &GetFactorAValue, float &GetFactorBValue)
-{
-    GetFactorAValue = factor;
-    GetFactorBValue = factorB;
-}
+//void DRSSignalProc::GetFactor(float &GetFactorAValue, float &GetFactorBValue)
+//{
+//    GetFactorAValue = factor;
+//    GetFactorBValue = factorB;
+//}
 
 void DRSSignalProc::GetMinMaxValOfSignal(std::pair<float, float> &minmax)
 {

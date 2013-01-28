@@ -4,10 +4,16 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-#ifdef unix
+#ifndef __MINGW32__
+#ifdef QTCREATOR
 #include <root/TFile.h>
 #include <root/TTree.h>
 #include <root/TROOT.h>
+#else
+#include <TFile.h>
+#include <TTree.h>
+#include <TROOT.h>
+#endif
 #endif
 
 //struct Spectr {
@@ -48,6 +54,8 @@ DRSSpectrumProc::DRSSpectrumProc(unsigned int get_noise_min, unsigned int get_no
 
 void DRSSpectrumProc::spectrinit()
 {
+    factor = 1.;
+    shift = 0.;
     num_channels = work_channel = 1;
     NBins=1000;
     autonameOutFile=true;
@@ -190,6 +198,15 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
 
 void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
 {
+    /**
+      * CreateSimpleHist(std::vector<float> &signal) Сгенерировать простую гистограмму.
+      * Также генерируется дерево TTRee с вектором значений интеграла (vector<float> signal),
+      * значениями noise_min noise max signal_min signal_max для определения расположения
+      * сигнала на осциллограмме. Также в дерево входят значения factor и shift, для множителя
+      * и сдвига. Сохраненная гистограмма выводит значения с (signal*factor + shift)
+      * Значения интеграла в дереве сохраняются без factor и shift.
+      *
+      */
 
     pair<float,float> ValuesOfBorders;
     GetMinMaxValOfSignal(ValuesOfBorders);
@@ -206,8 +223,8 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
         if (OutFileNameHist.substr(OutFileNameHist.find_first_of(".")+1)=="root") OutFileName = OutFileNameHist;
         else { ifrootfile = false; OutFileName = OutFileNameHist;}
     }
-    float factor,shift;
-    GetFactor(factor,shift);
+    //float factor,shift;
+    //GetFactor(factor,shift);
 #ifndef __MINGW32__
 
     gROOT->ProcessLine("#include <vector>");
@@ -228,7 +245,7 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
         SignalData->Branch("Signal_min",&signal_min,"signal_min/s");
         SignalData->Branch("Signal_max",&signal_max,"signal_max/s");
         SignalData->Branch("Factor",&factor,"factor/F");
-        SignalData->Branch("Shift",&shift,"shuft/F");
+        SignalData->Branch("Shift",&shift,"shift/F");
 
         SignalData->Fill();
         SignalData->Write();
@@ -237,13 +254,13 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
 
     if (!canvasflag) { canvas = new TCanvas("DRS-Signal","DRS-Signal",800,600); canvasflag =true;}
 
-    if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder,maxBorder); HistSpectrflag=true;}
+    if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder*factor+shift,maxBorder*factor+shift); HistSpectrflag=true;}
 
 
     int N = signal.size();
     for (int i=0;i<N;i++)
     {
-        HistSpectr->Fill(signal[i]);
+        HistSpectr->Fill(factor*signal[i]+shift);
     }
     HistSpectr->Draw();
     if (ifrootfile) canvas->Write();
@@ -271,13 +288,13 @@ void DRSSpectrumProc::CreateSimpleHist(std::vector<float> &signal)
 
     if (!canvasflag) { canvas = new TCanvas("DRS","DRS",800,600); canvasflag =true;}
 
-    if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder,maxBorder); HistSpectrflag=true;}
+    if(!HistSpectrflag) {HistSpectr = new TH1F(InputFileName.c_str(),InputFileName.c_str(),NBins,minBorder*factor+shift,maxBorder*factor+shift); HistSpectrflag=true;}
 
 
     N = signal.size();
     for (int i=0;i<N;i++)
     {
-        HistSpectr->Fill(signal[i]);
+        HistSpectr->Fill(factor*signal[i]+shift);
     }
     HistSpectr->Draw();
 
@@ -372,6 +389,18 @@ void DRSSpectrumProc::DetectPolarityOfSignal()
                 else posorneg=1;
 
             }
-        }
+    }
+}
+
+void DRSSpectrumProc::SetFactor(float SetFactor, float SetShift)
+{
+        factor = SetFactor;
+        shift = SetShift;
+}
+
+void DRSSpectrumProc::GetFactor(float &GetFactor, float &GetShift)
+{
+    GetFactor = factor;
+    GetShift = shift;
 }
 
