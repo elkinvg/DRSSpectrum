@@ -56,7 +56,7 @@ void DRSSpectrumProc::spectrinit()
 {
     factor = 1.;
     shift = 0.;
-    num_channels = work_channel = 1;
+    //num_channels = 1;
     NBins=1000;
     autonameOutFile=true;
     canvasflag=false;
@@ -66,6 +66,7 @@ void DRSSpectrumProc::spectrinit()
     fileopenflag = false;
     resdir="res/";
     InputFileName = "DRS";
+    work_ch_mode = 1; // 0b0001 - is 1st channel
 }
 
 DRSSpectrumProc::~DRSSpectrumProc()
@@ -123,6 +124,20 @@ void DRSSpectrumProc::GetSpectumOffline(string filename , int type)
                 {
                     endframe = DRSGetFrame(&amp[0],&times[0]);
                     /*if (autodetect) */autoSignalDetectKusskoff(&amp[0],endfile);
+                }
+                else
+                {
+                    if (work_ch_mode & 1 || work_ch_mode & 2 || work_ch_mode & 4 || work_ch_mode & 8)
+                    {
+                        DRSGetFrameFromOneCh(&amp[0],&times[0], work_ch_mode);
+                        autoSignalDetectKusskoff(&amp[0],endfile);
+                    }
+                    else
+                    {
+                        cerr << "Mode with n>2 working channels is not implemented" << endl;
+                        DRSFileEnd();
+                        exit(1);
+                    }
                 }
                 if (endframe) continue;
             }
@@ -402,5 +417,10 @@ void DRSSpectrumProc::GetFactor(float &GetFactor, float &GetShift)
 {
     GetFactor = factor;
     GetShift = shift;
+}
+
+void DRSSpectrumProc::setChannelMode(int chMode)
+{
+    work_ch_mode = (short)chMode;
 }
 

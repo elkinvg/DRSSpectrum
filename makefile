@@ -21,7 +21,7 @@
 #    CXXLIBS       = $(ROOTLIBS)
 #    ROOTSO        = totdataread_cpp.so
 
-first: release
+first: debug
 
 release: CXXFLAGS=  $(RELEASE_FLAGS)
 release: all
@@ -45,7 +45,7 @@ $(OBJDIR)/main.o: main.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean: FORCE
-	$(DELFILE) ./SO/*.so ./SO/*.so* ./bin/*so ./obj/*.o *.h~ *.cpp~ *.d
+	$(DELFILE) ./SO/*.so ./SO/*.so* ./bin/*so ./obj/*.o *.h~ *.cpp~ ./obj/*.d
 	
 install: insthomebin
 

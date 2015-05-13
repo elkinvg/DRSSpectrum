@@ -43,6 +43,7 @@ void RunApp();
 float getfactor=1;     //
 float getfactorB=0;    //  y = factor*x + factorB
 float tmpf;
+int chMode = 0; // Channel mode
 unsigned int NumOfBins=0;
 const int NumSamples=1024;
 
@@ -61,25 +62,29 @@ int fromStr(const std::string aS)
         return _res;
 }
 
-static const char *optString = "mho:a:b:n:dkrg";
+static const char *optString = "lho:a:b:n:dkrgm:";
 static const struct option longOpts[] = {
     {"help", 0, 0, 'h'},
-    {"oneline-mode", 0, 0, 'm'},
+    {"oneline-mode", 0, 0, 'l'},
     {"outfile", 1, 0, 'o'},
     {"a-factor", 1, 0, 'a'},
     {"b-shift", 1, 0, 'b'},
-    {"number-of-canal", 1, 0, 'n'},
+    {"number-of-bins", 1, 0, 'n'},
     {"only-detect", 0, 0, 'd'},
     {"amplitute", 0, 0, 'k'},
     {"without-root-application", 0, 0, 'r'},
     {"graph-integral",0, 0,'g'},
+    {"channel-mode",1, 0,'m'},
     {0, 0, 0, 0}
 };
 void help()
 {
     cout << "Usage:\t drsspectrum INPUTFILE [noise_min noise max signal_min signal_max]" <<"\n\t [[-o|--outfile] outfile] " /*<< endl*/;
-    cout << /*"[[-n|--number-of-canal] Number_of_canal]*/ "[[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
+    cout << /*"[[-n|--number-of-bins] Number of bins]*/ "[[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
     cout<< "\t [-d|--only-detect] [-k|--amplitute] [-r|--without-root-application]"  << endl;
+    cout << endl;
+    cout << " [[-m|--channel-mode] Working channel] ([4ch 3ch 2ch 1ch] Example -m 4 for 3ch (0b0100))." << endl;
+    cout << "\t Only one channel from used channels." << endl;
     cout << endl;
     cout << " -a -b: Integral = factor*X + shift; factor is -a shift is -b " << endl;
     cout << " -d detect noise_min noise max signal_min signal_max and exit " << endl;
@@ -109,7 +114,7 @@ int main(int argc, char** argv)
             NameOutputFile = (string)(argv[optind-1]);
             outputfileflag = true;
             break;
-        case 'm':
+        case 'l':
             cout << "oneline mode " << endl;
             cout << "***********************************" << endl;
             oneline_mode = true;
@@ -144,6 +149,10 @@ int main(int argc, char** argv)
         case 'd':
             onlydetect = true;
             break;
+        case 'm':
+            chMode = atoi(argv[optind-1]);
+            break;
+
         case 0:
 //            if (strcmp("longopts",longOpts[longIndex].name) == 0)
 
@@ -240,6 +249,7 @@ int main(int argc, char** argv)
     if (graphintegralsignal)
     {
         if(outputfileflag) spectrum->SetOutFileName(NameOutputFile);
+        if(chMode) spectrum->setChannelMode(chMode);
         if (amplitudekuskoffmode) spectrum->SetModeIntegral(amplitudekuskoffmode);
         if(NumOfBins>0) spectrum->SetNumberOfBins(NumOfBins);
         if(rootapplicationflag) UseApp();
@@ -249,6 +259,7 @@ int main(int argc, char** argv)
     if(!oneline_mode)
     {
         if(outputfileflag) spectrum->SetOutFileName(NameOutputFile);
+        if(chMode) spectrum->setChannelMode(chMode);
         if(getfactor!=0 || getfactorB!=0) spectrum->SetFactor(getfactor,getfactorB);
         if (amplitudekuskoffmode) spectrum->SetModeIntegral(amplitudekuskoffmode);
         if(NumOfBins>0) spectrum->SetNumberOfBins(NumOfBins);

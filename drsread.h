@@ -23,6 +23,7 @@ public:
     int GetNumberOfChannels();
 
     bool DRSGetFrame(unsigned short *n_amplitudes, float *n_times, bool readflag=true);
+    bool DRSGetFrameFromOneCh(unsigned short *n_amplitudes, float *n_times, short working_channel, bool readflag=true);
     void DRSFileEnd();
 
 private:
@@ -34,9 +35,12 @@ private:
     string FileDataName;
     unsigned long int sizeoffile;
     bool ifupdatefile; // if file updated = true
+    bool isAlwaysCheckNumOfCh; // if allways check of number of channel (all iterations). Default is false
+    short int checkNumOfCh();
     void DRS4read(string outfilename);
     void DRSStreamOpen(string filename);
     void DRSStreamClose();
+    void drsGetFrameVoltage(unsigned short *n_amplitudes, bool readflag);
 };
 
 #endif // DRSREAD_H

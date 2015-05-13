@@ -28,16 +28,6 @@ public:
     TCanvas *canvas;
     TGraph *graph;
 #endif
-
-    bool autodetect;
-    bool onlydetect;
-    bool autonameOutFile;
-    int num_channels;
-    int work_channel;
-    bool onlinemode;
-    bool fileopenflag;
-
-
     void SetOutFileName(string);
     void SetNumberOfBins(unsigned int);
     void GetSpectumOffline(string filename , int type = DRS4);
@@ -47,7 +37,16 @@ public:
 
     void SetFactor(float SetFactor, float SetShift);
     void GetFactor(float &GetFactor, float &GetShift);
+    void setChannelMode(int chMode);
 private:
+    bool autodetect;
+    bool onlydetect;
+    bool autonameOutFile;
+    int num_channels;
+    int work_channel;
+    short int work_ch_mode; // 0b0001 default - 0b[4ch 3ch 2ch 1ch]
+    bool onlinemode;
+    bool fileopenflag;
     float factor,shift;
     string resdir;
     void spectrinit();
