@@ -1,299 +1,272 @@
 #include <iostream>
-#include <getopt.h>
-#include <string.h>
-#include <string>
-#include <stdlib.h>
 #include <sstream>
-#include <signal.h>
+#include <getopt.h>
 
+#include "drstype.h"
+#include "drssignalprocn.h"
 
-#include "drsspectrumproc.h"
-
-#ifndef __MINGW32__
-#ifdef QTCREATOR
+#ifndef DEBROOT
 #include <root/TApplication.h>
 #else
 #include <TApplication.h>
 #endif
-#endif
-using namespace std;
 
-// Flags
-bool onlydetect=false;
-bool inputparameters=false;
-bool outputfileflag=false;
-bool rootapplicationflag=true;
-bool graphintegralsignal=false;
-
-
-
-
-
-string NameOutputFile;
-bool amplitudekuskoffmode=false; // amplitude = true; charge = false
-unsigned short int get_noise_min,get_noise_max,get_signal_min, get_signal_max;
-bool oneline_mode = false;
-
-istringstream iss;
-string tmpvalue;
+TApplication *myapp;
 void ctrlplusc(int sig);
 void UseApp();
 void RunApp();
+DrsReadN *drs;
+DrsSignalProcN *signalProc;
 
+using std::cout;
+using std::endl;
+
+//Flags
+bool onlydetect = false;
+bool inputparameters = false;
+bool singleChannelMode = true;
+bool rootapplicationflag=true;
+bool isoutpng=false;
+bool amplitudekuskoffmode=false;
+bool isnewoutdir=false;
+bool safetymode=false;
+bool voltmode=false;
+
+unsigned short modes = 0;
+
+unsigned short int get_noise_min,get_noise_max,get_signal_min, get_signal_max;
+int chMode = 0; // Channel mode
 float getfactor=1;     //
 float getfactorB=0;    //  y = factor*x + factorB
-float tmpf;
-int chMode = 0; // Channel mode
-unsigned int NumOfBins=0;
-const int NumSamples=1024;
 
-#ifndef __MINGW32__
-TApplication *myapp;
-#endif
-DRSSpectrumProc *spectrum;
+short int maxNCh;
 
-//template < typename T >
 int fromStr(const std::string aS)
 {
-        std::istringstream _iss(aS);
-        int _res;
-        _iss >> _res;
-        if (_res==0) return -1;
-        return _res;
+    std::istringstream _iss(aS);
+    int _res;
+    _iss >> _res;
+    if (_res==0) return -1;
+    return _res;
 }
 
-static const char *optString = "lho:a:b:n:dkrgm:";
+static const char *optString = "khdrosvm:a:b:n:c:";
+
 static const struct option longOpts[] = {
     {"help", 0, 0, 'h'},
-    {"oneline-mode", 0, 0, 'l'},
-    {"outfile", 1, 0, 'o'},
+    {"only-detect", 0, 0, 'd'},
+    {"without-root-app", 0, 0, 'r'},
+    {"amplitude", 0, 0, 'k'},
+    {"out-png", 0, 0, 'o'},
+    {"safety", 0, 0, 's'},
+    {"volt-mode", 0, 0, 'v'},
+    {"channel-mode",1, 0,'m'},
+    {"max-num", 1, 0,'c'},
     {"a-factor", 1, 0, 'a'},
     {"b-shift", 1, 0, 'b'},
-    {"number-of-bins", 1, 0, 'n'},
-    {"only-detect", 0, 0, 'd'},
-    {"amplitute", 0, 0, 'k'},
-    {"without-root-application", 0, 0, 'r'},
-    {"graph-integral",0, 0,'g'},
-    {"channel-mode",1, 0,'m'},
+    {"outdir", 1, 0, 'n'},
     {0, 0, 0, 0}
 };
+
 void help()
 {
-    cout << "Usage:\t drsspectrum INPUTFILE [noise_min noise max signal_min signal_max]" <<"\n\t [[-o|--outfile] outfile] " /*<< endl*/;
-    cout << /*"[[-n|--number-of-bins] Number of bins]*/ "[[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
-    cout<< "\t [-d|--only-detect] [-k|--amplitute] [-r|--without-root-application]"  << endl;
+    cout << "Version 2.0" << endl;
+    cout << "Usage:    drsspectrum\tINPUTFILE ";
+    cout << "[noise_min noise max signal_min signal_max] " << endl;
+    cout << "\t\t\t[-d | --only-detect] [-h | --help] [[-m|--channel-mode] Working channels]" << endl;
+    cout << "\t\t\t[-r|--without-root-application] [[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
+    cout << "\t\t\t[-o|--out-png] [-k|--amplitude] [[-n|--outdir] newoutdir] [-s|safety]" << endl;
+    cout << "\t\t\t[[-c]--max-num] max num of chs] [-v|--volt-mode]" << endl;
     cout << endl;
-    cout << " [[-m|--channel-mode] Working channel] ([4ch 3ch 2ch 1ch] Example -m 4 for 3ch (0b0100))." << endl;
-    cout << "\t Only one channel from used channels." << endl;
-    cout << endl;
-    cout << " -a -b: Integral = factor*X + shift; factor is -a shift is -b " << endl;
-    cout << " -d detect noise_min noise max signal_min signal_max and exit " << endl;
-    cout << " -k run with amplitude mode. Default mode is charge" << endl;
-    cout << " -r run without root aplication " << endl;
-    cout << " -g plot of the integral signal " << endl;
-
+    cout << "   [noise_min noise max signal_min signal_max] Установка локализации шума и сигнала для всех каналов" << endl;
+    cout << "   -d,\t--only-detect\tВычислить noise_min noise max signal_min signal_max и выйти" << endl;
+    cout << "   -m\t--channel-mode\t"<< BOLD_SH<<"<channels>"<< ENDCOLOR << " Выбрать рабочие каналы из используемых [4ch 3ch 2ch 1ch]. Записывать десятичное число. Пример: -m 4 для 3го канала (0b0100)" << endl;
+    cout << "   -r,\t--without-root-app\tЗапустить без root aplication" << endl;
+    cout << "   -a,\t--a-factor\t"<< BOLD_SH<<"<factor>"<< ENDCOLOR << " установить множитель" << endl;
+    cout << "   -b,\t--b-shift\t"<< BOLD_SH<<"<shift>"<< ENDCOLOR << " установить сдвиг" << endl;
+    cout << "   -o,\t--out-png\tВывести гистограммы в png" << endl;
+    cout << "   -k,\t--amplitude\tЗапустить в амплитудном режиме." << endl;
+    cout << "   -n,\t--outdir\t"<< BOLD_SH <<"<dir>"<< ENDCOLOR << "Имя новой output директории. Новая директория будет в директории res" << endl;
+    cout << "   -s,\t--safety\tБезопасный режим. Если во время набора менялось число каналов." << endl;
+    cout << "   -v,\t--volt-mode\tИзменить volt mode. По умолчанию диапазон от -0,5 до 0,5 V, изменить на 0 - 1 V" << endl;
+    cout << "   -c,\t--max-num\t" << BOLD_SH << "<num>" << ENDCOLOR << " установить максимальное число возможных каналов. Используется в безопасном режиме. По умолчанию 4" << endl;
 
     exit(0);
 }
 
-
+float tmpf;
+string tmpOutDir;
 int main(int argc, char** argv)
 {
-     // offline or oneline
     int opt = 0;
     int longIndex = 0;
 
-    opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
-    while( opt != -1 ) {
-        switch( opt ) {
+    opt = getopt_long( argc, argv, optString, longOpts, &longIndex);
+    while (opt != -1) {
+        switch (opt) {
         case 'h':
             help();
             break;
-        case 'o':
-            cout << " outputfile " << /*optind <<*/ argv[optind-1] <<endl;
-            NameOutputFile = (string)(argv[optind-1]);
-            outputfileflag = true;
-            break;
-        case 'l':
-            cout << "oneline mode " << endl;
-            cout << "***********************************" << endl;
-            oneline_mode = true;
-            break;
-        case 'a':
-            tmpf = atof(argv[optind-1]);
-            if (tmpf==0) cout << argv[optind-1] <<" factor a must be float " << endl;
-            getfactor = getfactor*tmpf;
-            break;
-
-        case 'b':
-            tmpf = atof(argv[optind-1]);
-            if (tmpf==0) cout << argv[optind-1] <<" factor b must be float " << endl;
-            getfactorB = getfactorB+tmpf;
-            break;
-
-        case 'n':
-            NumOfBins = atoi(argv[optind-1]);
-            break;
-
-        case 'k':
-            amplitudekuskoffmode=true;
-            break;
-
-        case 'r':
-            rootapplicationflag=false;
-            break;
-        case 'g':
-            graphintegralsignal = true;
-            break;
-
         case 'd':
             onlydetect = true;
             break;
         case 'm':
             chMode = atoi(argv[optind-1]);
             break;
-
-        case 0:
-//            if (strcmp("longopts",longOpts[longIndex].name) == 0)
-
-            exit(0);
+        case 's':
+            safetymode = true;
+            break;
+        case 'v':
+            voltmode = true;
+            break;
+        case 'c':
+            maxNCh = atoi(argv[optind-1]);
+            break;
+        case 'a':
+            tmpf = atof(argv[optind-1]);
+            if (tmpf==0) cout << argv[optind-1] <<" factor a must be float " << endl;
+            getfactor = getfactor*tmpf;
+            break;
+        case 'k':
+            amplitudekuskoffmode=true;
+            break;
+        case 'b':
+            tmpf = atof(argv[optind-1]);
+            if (tmpf==0) cout << argv[optind-1] <<" factor b must be float " << endl;
+            getfactorB = getfactorB+tmpf;
+            break;
+        case 'n':
+            isnewoutdir = true;
+            tmpOutDir = string(argv[optind-1]);
+            break;
+        case 'r':
+            rootapplicationflag=false;
+            break;
+        case 'o':
+            isoutpng=true;
+            break;
         default:
             help();
-            exit(0);
+            break;
         }
         opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
     }
 
-
-    if (argc-optind==0) { cout << "No input file specified" << endl; exit(0);}
+    if (argc-optind==0) { cout << "No input file specified\nUse -h for help" << endl; exit(0);}
     if ((argc-optind>1 )&&(argc-optind!=5) ) {cout << " many arguments! " << endl; exit(0);}
 
     if (argc-optind==5)
     {
         if(onlydetect)
         {
-            cerr << " с параметром -d не должно быть дополнительных аргументов" << endl;
+            cerr << RED_SH << " с параметром -d не должно быть дополнительных аргументов" << ENDCOLOR << endl;
             onlydetect = false;
-            graphintegralsignal = false;
         }
 
-//        tmpvalue=string(argv[optind]);
         int tmpval;
         tmpval = fromStr(string(argv[optind+1]));
-
-        if(tmpval<0 || tmpval>NumSamples)
-        {
-            cerr << " error parameters " << endl;
-            exit(1);
-        }
         get_noise_min = (unsigned short int)tmpval;
+
         tmpval = fromStr(argv[optind+2]);
-        if(tmpval<0 || tmpval>NumSamples)
-        {
-            cerr << " error parameters " << endl;
-            exit(1);
-        }
         get_noise_max = (unsigned short int)tmpval;
+
         tmpval = fromStr(argv[optind+3]);
-        if(tmpval<0 || tmpval>NumSamples)
-        {
-            cerr << " error parameters " << endl;
-            exit(1);
-        }
         get_signal_min = (unsigned short int)tmpval;
+
         tmpval = fromStr(argv[optind+4]);
-        if(tmpval<0 || tmpval>NumSamples)
-        {
-            cerr << " error parameters " << endl;
-            exit(1);
-        }
         get_signal_max = (unsigned short int)tmpval;
+
         if (get_noise_min<16) get_noise_min=16;
-        if (get_noise_max <= get_noise_min )
-        {
-            cerr << " error parameters: noise_max < noise_min " << endl;
-            exit(1);
-        }
-        if (get_signal_max <= get_signal_min )
-        {
-            cerr << " error parameters: signal_max <= signal_min " << endl;
-            exit(1);
-        }
-        if (get_noise_min>=get_signal_min)
-        {
-            cerr << " error parameters: noise_min>=signal_min " << endl;
-            exit(1);
-        }
-        if (get_noise_max>get_signal_min) get_noise_max=get_signal_min;
         inputparameters=true;
     }
+
+    string nameInputFile = argv[optind];
+
+    TypeData drsType = DrsReadN::checkTypeOfDrsData(argv[optind]);
+
+    if (drsType == TypeData::drs40)
+    {
+        cout << " Type of data is DRS40 " << endl;
+        drs = new Drs4Read(nameInputFile);
+    }
+    else if (drsType == TypeData::unknown)
+    {
+        cerr << RED_SH << " File format error! (unknown format)" << ENDCOLOR << endl;
+        exit(1);
+    }
+
+    if (safetymode)
+    {
+        modes = (modes | 0b10);
+        if(maxNCh>0) drs->setMaxNumOfChannels(maxNCh);
+        drs->useSafetyMode();
+    }
+    if (voltmode) modes = (modes | 0b100);
+    if (onlydetect) modes = (modes | 0b1);
 
 
     if(inputparameters)
     {
-        spectrum = new DRSSpectrumProc(get_noise_min,get_noise_max,get_signal_min,get_signal_max);
+        if (singleChannelMode)
+            signalProc = new DrsSignalProcN(drs,get_noise_min,get_noise_max,get_signal_min,get_signal_max,modes);
     }
     else
     {
-        if(onlydetect)
+        if(onlydetect || safetymode || voltmode)
         {
-            spectrum = new DRSSpectrumProc(onlydetect);
-            if(!graphintegralsignal) rootapplicationflag = false;
+            signalProc = new DrsSignalProcN(drs,modes);
         }
         else
         {
-            spectrum = new DRSSpectrumProc();
+            signalProc = new DrsSignalProcN(drs);
         }
     }
 
-    if (graphintegralsignal)
+//    if (safetymode)
+//    {
+//        signalProc->setSafetyMode();
+//    }
+
+    if (chMode>0 && !safetymode) signalProc->setWorkingChannelsMode(chMode);
+    if(getfactor!=0 && (getfactor!=1 || getfactorB!=0)) signalProc->setFactorAndShift(getfactor,getfactorB);
+
+    if (amplitudekuskoffmode) signalProc->setAmplitudeKuskoffMode(true);
+    auto spectr = signalProc->getSpectumOffline();
+
+    if (onlydetect)
     {
-        if(outputfileflag) spectrum->SetOutFileName(NameOutputFile);
-        if(chMode) spectrum->setChannelMode(chMode);
-        if (amplitudekuskoffmode) spectrum->SetModeIntegral(amplitudekuskoffmode);
-        if(NumOfBins>0) spectrum->SetNumberOfBins(NumOfBins);
-        if(rootapplicationflag) UseApp();
-        spectrum->CreatIntegralGraph(argv[optind]);
-        if(rootapplicationflag) RunApp();
-    }
-    if(!oneline_mode)
-    {
-        if(outputfileflag) spectrum->SetOutFileName(NameOutputFile);
-        if(chMode) spectrum->setChannelMode(chMode);
-        if(getfactor!=0 || getfactorB!=0) spectrum->SetFactor(getfactor,getfactorB);
-        if (amplitudekuskoffmode) spectrum->SetModeIntegral(amplitudekuskoffmode);
-        if(NumOfBins>0) spectrum->SetNumberOfBins(NumOfBins);
-        if(rootapplicationflag) UseApp();
-        spectrum->GetSpectumOffline(argv[optind]);
-        if(rootapplicationflag) RunApp();
+        delete signalProc;
+        delete drs;
+        return 0;
     }
 
-    delete spectrum;
+    if(rootapplicationflag) UseApp();
+    if (isnewoutdir) signalProc->setOutputDirectory(tmpOutDir);
+    if (isoutpng) signalProc->setOutPngFileFlag();
+    signalProc->rootProc(spectr);
+    if(rootapplicationflag) RunApp();
 
-    return 0;
+
+
+    delete signalProc;
+    delete drs;
 }
-
 
 void ctrlplusc(int sig)
 {
     cout << "..." << endl;
-    if(rootapplicationflag) delete spectrum;
+    if(rootapplicationflag) {delete signalProc;delete drs;}
     exit(0);
 }
 
 void UseApp()
 {
-    signal(SIGINT,ctrlplusc);
-#ifndef __MINGW32__
     myapp = new TApplication("App",0,0);
     cout << "\e[1;33m \e[40m Use CTRL+C to exit!!! \E[0m" << endl;
 
-#endif
 }
 
 void RunApp()
 {
-#ifndef __MINGW32__
-     myapp->Run();
-#endif
+    myapp->Run();
 }

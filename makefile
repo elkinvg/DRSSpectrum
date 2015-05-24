@@ -1,5 +1,6 @@
     ROOTFLAGS     = $(shell root-config --cflags)
     ROOTLIBS      = $(shell root-config --glibs)
+    #ROOTLIBS     = -L/usr/lib/x86_64-linux-gnu -lCore -lRIO -lHist -lGpad -lTree -lm -ldl
     TARGET        = bindrsspectrum
     CC            = gcc
     CXX           = g++
@@ -9,19 +10,17 @@
     OBJDIR        = ./obj
     BINDIR        = ./bin
     SODIR         = ./SO
-    OBJS          = $(OBJDIR)/drsread.o $(OBJDIR)/drssignalproc.o $(OBJDIR)/drsspectrumproc.o
+    OBJS          = $(OBJDIR)/drsreadn.o $(OBJDIR)/drs4read.o $(OBJDIR)/drssignalprocn.o
 
     TARGETLOC     = $(BINDIR)/$(TARGET)
     
     LIBS          = $(ROOTLIBS)
-    RELEASE_FLAGS = -MD $(ROOTFLAGS) -O2
-    DEBUG_FLAGS   = -MD $(ROOTFLAGS) -O0 -g -DDEBUG -Wall
+    COM_FLAGS     = -std=c++11
+    RELEASE_FLAGS = -MD $(ROOTFLAGS) -O2 $(COM_FLAGS)
+    DEBUG_FLAGS   = -MD $(ROOTFLAGS) -O0 -g -DDEBUG -Wall $(COM_FLAGS)
+    
 
-#    CXXFLAGS      = $(ROOTFLAGS) -MD
-#    CXXLIBS       = $(ROOTLIBS)
-#    ROOTSO        = totdataread_cpp.so
-
-first: debug
+first: release
 
 release: CXXFLAGS=  $(RELEASE_FLAGS)
 release: all
@@ -40,12 +39,12 @@ $(OBJDIR)/%.o: %.cpp %.h
 	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-$(OBJDIR)/main.o: main.cpp
+$(OBJDIR)/main.o: main.cpp $(OBJS)
 	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 clean: FORCE
-	$(DELFILE) ./SO/*.so ./SO/*.so* ./bin/*so ./obj/*.o *.h~ *.cpp~ ./obj/*.d
+	$(DELFILE) ./SO/*.so ./SO/*.so* ./bin/*so ./obj/*.o *.h~ *.cpp~ ./obj/*.d ./bin/$(TARGET)
 	
 install: insthomebin
 

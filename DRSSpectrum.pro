@@ -1,6 +1,7 @@
 TEMPLATE = app
 CONFIG += console
 CONFIG -= qt
+QMAKE_CXXFLAGS += -std=c++11
 
 MOC_DIR = moc
 OBJECTS_DIR = obj
@@ -28,6 +29,10 @@ SOURCES += main.cpp \
     drsread.cpp \
     drssignalproc.cpp \
     drsspectrumproc.cpp \
+    drsreadn.cpp \
+    drs4read.cpp \
+    main2.cpp \
+    drssignalprocn.cpp
 
 OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
 #SOURCES += ./hlp/auto_signal_detect.c \
@@ -52,4 +57,9 @@ HEADERS += \
     drsread.h \
     drssignalproc.h \
     drsspectrumproc.h \
-    rootframe.h
+    rootframe.h \
+    drsreadn.h \
+    drs4read.h \
+    drstype.h \
+    common.h \
+    drssignalprocn.h
