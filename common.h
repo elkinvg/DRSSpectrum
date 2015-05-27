@@ -10,4 +10,8 @@ const string ENDCOLOR = " \e[0m";
 const string drs4Mark = "EHDR";
 const string drs4chMark = "C00";
 
+const string drs450Mark = "TIME";
+const string drs450chMark = drs4chMark;
+const string drs450newHeadMark = "EHDR";
+
 #endif // COMMON_H

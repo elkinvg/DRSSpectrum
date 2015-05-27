@@ -32,7 +32,8 @@ SOURCES += main.cpp \
     drsreadn.cpp \
     drs4read.cpp \
     main2.cpp \
-    drssignalprocn.cpp
+    drssignalprocn.cpp \
+    drs450read.cpp
 
 OBJECTIVE_SOURCES += ./hlp/auto_signal_detect.c \
 #SOURCES += ./hlp/auto_signal_detect.c \
@@ -62,4 +63,5 @@ HEADERS += \
     drs4read.h \
     drstype.h \
     common.h \
-    drssignalprocn.h
+    drssignalprocn.h \
+    drs450read.h

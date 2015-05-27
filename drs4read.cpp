@@ -44,17 +44,15 @@ bool Drs4Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float> &
 
     char buffer[5];
     int event_serial;
-    struct tm timeinfo;
-    short tYear,tMon,tDay,tHour,tMin,tSec,tmSec;
 
     drsCheckFileStream();
     if (v_times.size()<nSamples) v_times.resize(nSamples);
     if (v_amplitudes.size()<nSamples*nChannels) v_amplitudes.resize(nSamples*nChannels);
     char buffer2[4];
 
-    std::ios::pos_type tmppos = drsInput.tellg();
-    bool isbegin = false;
-    if (tmppos==0) isbegin = true;
+    DataMarker position;
+
+
 
     drsInput.read(&buffer[0],4*sizeof(char));
     buffer[4] = '\0';
@@ -72,24 +70,22 @@ bool Drs4Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float> &
     }
     drsInput.read((char*)&event_serial,sizeof(int));
 
-    drsInput.read((char*)&tYear,sizeof(short));
-    drsInput.read((char*)&tMon,sizeof(short));
-    drsInput.read((char*)&tDay,sizeof(short));
-    drsInput.read((char*)&tHour,sizeof(short));
-    drsInput.read((char*)&tMin,sizeof(short));
-    drsInput.read((char*)&tSec,sizeof(short));
-    drsInput.read((char*)&tmSec,sizeof(short));
+    if (event_serial == 1) position = DataMarker::begin;
+    else if (event_serial == nPulses) position = DataMarker::end;
+    else position = DataMarker::body;
 
-    if (isbegin)
-    {
-        struct tm timeinfo2;
-        time_t date2 = mktime(&timeinfo2);
-        date2 =  mktime(&timeinfo2);
-        // нужно для правильной интерпретации времени. Первое обращение даёт неправильный результат
-        // поэтому обращаемся здесь
-    }
+//    if (position==DataMarker::begin)
+//    {
+//        struct tm timeinfo2;
+//        time_t date2 = mktime(&timeinfo2);
+//        date2 =  mktime(&timeinfo2);
+//        // нужно для правильной интерпретации времени. Первое обращение даёт неправильный результат
+//        // поэтому обращаемся здесь
+//    }
 
-    drsInput.seekg(sizeof(short int),ios::cur);
+    readTimeInfo(position); // reading of enent date/time information
+
+
     drsInput.read((char*)&v_times[0],nSamples*sizeof(float));
 
     unsigned short tmpCheckMode = 1;
@@ -109,34 +105,11 @@ bool Drs4Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float> &
     }
 
 
-    if (isbegin)
-    {
-        timeinfo.tm_year = (int)(tYear - 1900);
-        timeinfo.tm_mon = (int)(tMon - 1);
-        timeinfo.tm_mday = (int)tDay;
-        timeinfo.tm_hour = (int)tHour;
-        timeinfo.tm_min = (int)tMin;
-        timeinfo.tm_sec = (int)tSec;
-
-        time_t date = mktime(&timeinfo);
-        date =  mktime(&timeinfo);
-        timeStamps.first = date;//*1000+tmSec;
-    }
-
 
     pos_mark = drsInput.tellg();
     drsInput.read((char*)&buffer[0],4*sizeof(char));
     if (!drsInput)
     {
-        timeinfo.tm_year = tYear - 1900;
-        timeinfo.tm_mon = tMon - 1;
-        timeinfo.tm_mday = tDay;
-        timeinfo.tm_hour = tHour;
-        timeinfo.tm_min = tMin;
-        timeinfo.tm_sec = tSec;
-
-        time_t date = mktime(&timeinfo);
-        timeStamps.second = (unsigned long)date;//*1000+tmSec;
         isEndFile = true;
         return isEndFile;
     }
@@ -169,13 +142,10 @@ bool Drs4Read::drsGetFrameSafety(vector<unsigned short> &v_amplitudes, vector<fl
     char buffer[5];
     char buffer2[4];
     int event_serial;
-    struct tm timeinfo;
-    short tYear,tMon,tDay,tHour,tMin,tSec,tmSec;
+
     usedChannels = 0;
 
-    std::ios::pos_type tmppos = drsInput.tellg();
-    bool isbegin = false;
-    if (tmppos==0) isbegin = true;
+    DataMarker position;
 
     drsCheckFileStream();
 
@@ -191,38 +161,35 @@ bool Drs4Read::drsGetFrameSafety(vector<unsigned short> &v_amplitudes, vector<fl
     buffer2[3] = '\0';
     char symbolChNum[1];
 
-
-
-
     if (strcmp(buffer,drsMark.c_str()) != 0)
     {
         cerr << RED_SH << "File format error! (Not DRS4 format or data error)" << ENDCOLOR << endl;
         drsStreamClose();
         exit(1);
     }
+
     drsInput.read((char*)&event_serial,sizeof(int));
+    if (event_serial == 1) position = DataMarker::begin;
+    else if (event_serial == nPulses) position = DataMarker::end;
+    else position = DataMarker::body;
 
-    drsInput.read((char*)&tYear,sizeof(short));
-    drsInput.read((char*)&tMon,sizeof(short));
-    drsInput.read((char*)&tDay,sizeof(short));
-    drsInput.read((char*)&tHour,sizeof(short));
-    drsInput.read((char*)&tMin,sizeof(short));
-    drsInput.read((char*)&tSec,sizeof(short));
-    drsInput.read((char*)&tmSec,sizeof(short));
 
-    if (isbegin)
-    {
-        struct tm timeinfo2;
-        time_t date2 = mktime(&timeinfo2);
-        date2 =  mktime(&timeinfo2);
-        // нужно для правильной интерпретации времени. Первое обращение даёт неправильный результат
-        // поэтому обращаемся здесь
-    }
+//    if (position==DataMarker::begin)
+//    {
+//        struct tm timeinfo2;
+//        time_t date2 = mktime(&timeinfo2);
+//        date2 =  mktime(&timeinfo2);
+//        // нужно для правильной интерпретации времени. Первое обращение даёт неправильный результат
+//        // поэтому обращаемся здесь
+//    }
 
-    drsInput.seekg(sizeof(short int),ios::cur);
+    readTimeInfo(position);
+
+
     drsInput.read((char*)&v_times[0],nSamples*sizeof(float));
 
     short nCh;
+    std::ios::pos_type tmppos;
 
     unsigned short tmpCheckMode;
     while (true) {
@@ -249,33 +216,10 @@ bool Drs4Read::drsGetFrameSafety(vector<unsigned short> &v_amplitudes, vector<fl
     }
 
 
-    if (isbegin)
-    {
-        timeinfo.tm_year = (int)(tYear - 1900);
-        timeinfo.tm_mon = (int)(tMon - 1);
-        timeinfo.tm_mday = (int)tDay;
-        timeinfo.tm_hour = (int)tHour;
-        timeinfo.tm_min = (int)tMin;
-        timeinfo.tm_sec = (int)tSec;
-
-        time_t date = mktime(&timeinfo);
-        date =  mktime(&timeinfo);
-        timeStamps.first = date;//*1000+tmSec;
-    }
-
     pos_mark = drsInput.tellg();
     drsInput.read((char*)&buffer[0],4*sizeof(char));
     if (!drsInput)
     {
-        timeinfo.tm_year = tYear - 1900;
-        timeinfo.tm_mon = tMon - 1;
-        timeinfo.tm_mday = tDay;
-        timeinfo.tm_hour = tHour;
-        timeinfo.tm_min = tMin;
-        timeinfo.tm_sec = tSec;
-
-        time_t date = mktime(&timeinfo);
-        timeStamps.second = date;
         isEndFile = true;
         return isEndFile;
     }
@@ -343,33 +287,13 @@ void Drs4Read::drsFileReadInfo()
     cout << "----------"<< endl;
 }
 
-void Drs4Read::setMaxNumOfChannels(short nCh)
-{
-    maxNumOfChannels = nCh;
-}
-
-unsigned short Drs4Read::getNumOfChannels()
-{
-    /**
-      \brief Возвращает число задействованных каналов
-      */
-    return nChannels;
-}
-
-unsigned short Drs4Read::getNumOfSamples()
-{
-    /**
-      \brief Возвращает число сэмплов в единичном импульсе
-      */
-    return nSamples;
-}
 
 long Drs4Read::calcNumOfPulses()
 {
     /**
       \brief Возвращает рассчитанное число фреймов (импульсов). Совпадает с реальным, если в процессе записи не менялось число каналов
       */
-    int onePulse,onePulseHead,onePulseCh;
+    unsigned long int onePulse,onePulseHead,onePulseCh;
     if (!nPulses)
     {
         onePulseHead = 4*sizeof(char) + sizeof(int) + 8*sizeof(short int) + nSamples*sizeof(float);

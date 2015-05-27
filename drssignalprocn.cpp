@@ -157,7 +157,7 @@ void DrsSignalProcN::createHist(const vector<vector<float> > &signal, TFile *tFi
         if(!safetymode) if (!(tmpCheckMode & work_ch_mode_)) {tmpCheckMode = tmpCheckMode << 1;continue;}
         string pCh = "_" + std::to_string(i)+"ch";
         canvas[i] = new TCanvas(("DRS-Signal"+pCh).c_str(),("DRS-Signal "+pCh).c_str(),800,600);
-        histSpectr[i] = new TH1F((inputFileName+pCh).c_str(),(inputFileName+pCh).c_str(),nBins,minValOfSignal[i]*factor_[i] + shift_[i],maxValOfSignal[i]*factor_[i] + shift_[i]);
+        histSpectr[i] = new TH1F((inputFileName+pCh).c_str(),(inputFileName+pCh).c_str(),nBins,(minValOfSignal[i]*factor_[i]) + shift_[i],maxValOfSignal[i]*factor_[i] + shift_[i]);
 
         for (int j=0;j<signal[i].size();j++)
         {
@@ -200,7 +200,7 @@ void DrsSignalProcN::createSumHist(TFile *tFile)
 
         int tmpI = 0;
         float tmpF = 0;
-        if (voltMode_) tmpF = 0.5;
+        if (voltModeN_) tmpF = 0.5;
         for (int j=numsampl*i;j<(numsampl*i+numsampl);j++)
         {
             tmpI++;
@@ -428,6 +428,7 @@ vector<vector<float> > DrsSignalProcN::getSpectumOffline()
         {
             cout << "SIZE " << i  << " " << nP[i] << endl;
         }
+        cout << endl;
     }
     else nPulses = drsRead->calcNumOfPulses();
     if (autodetect)
@@ -485,6 +486,11 @@ vector<vector<float> > DrsSignalProcN::getSpectumOffline()
             cout << " Noise max:\t" << BLUE_SH << noise_max_[i] << ENDCOLOR << endl;
             cout << " Signal min\t" << BLUE_SH << signal_min_[i] << ENDCOLOR << endl;
             cout << " Signal max\t" << BLUE_SH << signal_max_[i] << ENDCOLOR << endl;
+
+            if ((times.size()/numsampl)==(numofch))
+                cout << " Sampling frequency:"<< BLUE_SH  << 1/(times[i*numsampl+10] - times[i*numsampl+9]) << ENDCOLOR <<"GS/s" << endl;
+            else
+                cout << " Sampling frequency:"<< BLUE_SH  << 1/(times[10] - times[9]) << ENDCOLOR <<"GS/s" << endl;
         }
         return signalValues;
     }
@@ -590,6 +596,10 @@ vector<vector<float> > DrsSignalProcN::getSpectumOffline()
         cout << " values size: " << BLUE_SH << signalValues[i].size() << ENDCOLOR;
         cout << " Max: " << BLUE_SH << maxValOfSignal[i] << ENDCOLOR;
         cout << " Min: " << BLUE_SH << minValOfSignal[i] << ENDCOLOR << endl;
+        if ((times.size()/numsampl)==(numofch))
+            cout << " Sampling frequency:"<< BLUE_SH  << 1/(times[i*numsampl+10] - times[i*numsampl+9]) << ENDCOLOR <<" GS/s" << endl;
+        else
+            cout << " Sampling frequency:"<< BLUE_SH  << 1/(times[10] - times[9]) << ENDCOLOR <<" GS/s" << endl;
     }
     cout << "----------"<< endl;
     cout << endl;
@@ -775,7 +785,14 @@ float DrsSignalProcN::getSignalWithKuskoffMethod(const vector<unsigned short> &n
     }
     else
     for (int i=signal_min_[chNum]; i<signal_max_[chNum]; i++)
-        if (i<numsampl-1) signal += (((amps[i]/2.+amps[i+1]/2.)- noise)*(n_times[i+1]-n_times[i]));
+    {
+        if (n_times.size()<(numsampl+1)) {
+            if (i<numsampl-1) signal += (((amps[i]/2.+amps[i+1]/2.)- noise)*(n_times[i+1]-n_times[i]));
+        }
+        else {
+            if (i<numsampl-1) signal += (((amps[i]/2.+amps[i+1]/2.)- noise)*(n_times[numsampl*chNum + i+1]-n_times[numsampl*chNum + i]));
+        }
+    }
     signal = posorneg/**factor*/*signal/* + factorB*/;
     return signal;
 }

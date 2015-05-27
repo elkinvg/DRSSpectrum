@@ -19,7 +19,7 @@ using std::vector;
 
 #include "common.h"
 
-enum class TypeData {drs40, unknown};
+enum class TypeData {drs40, drs450, unknown};
 
 class DrsReadN
 {
@@ -33,10 +33,10 @@ public:
     virtual bool drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float> &v_times, unsigned short int mode) = 0;
     virtual bool drsGetFrameSafety(vector<unsigned short> &v_amplitudes, vector<float> &v_times, unsigned short& usedChannels) = 0;
     virtual void drsFileReadInfo() = 0;
-    virtual unsigned short int getNumOfChannels() = 0;
-    virtual unsigned short int getNumOfSamples() = 0;
+    virtual unsigned short int getNumOfChannels();
+    virtual unsigned short int getNumOfSamples();
     virtual long int calcNumOfPulses() = 0;
-    virtual void setMaxNumOfChannels(short int nCh) = 0;
+    virtual void setMaxNumOfChannels(short int nCh);
     virtual vector<unsigned long int> countNumOfPulses() = 0;
 
     virtual void drsFileSeekBegin();
@@ -46,6 +46,8 @@ public:
 
 //    virtual void DRSFileEnd();
 protected:
+    enum class DataMarker {begin,end,body};
+    struct tm timeinfo;
     ifstream drsInput;
 
 
@@ -54,10 +56,12 @@ protected:
 
     virtual void drsCheckFileStream();
 
+    virtual void readTimeInfo(DataMarker position);
+
     unsigned short int nSamples;
     unsigned short int nChannels;
     unsigned long int sizeOfFile;
-    long int nPulses;
+    unsigned long int nPulses;
 
     bool isUpdatedfile; // if file updated = true
     bool isEndFile; // if end of file = true

@@ -38,6 +38,10 @@ TypeData DrsReadN::checkTypeOfDrsData(string filename)
     {
         type = TypeData::drs40;
     }
+    else if (strcmp(ifDRSformat,drs450Mark.c_str())==0)
+    {
+        type = TypeData::drs450;
+    }
     else
     {
         type = TypeData::unknown;
@@ -56,6 +60,27 @@ void DrsReadN::useSafetyMode()
     nChannels = maxNumOfChannels;
     cout << " Used number of channels\t"<< BLUE_SH << nChannels << ENDCOLOR << endl;
     cout << "----------" << endl;
+}
+
+unsigned short DrsReadN::getNumOfChannels()
+{
+    /**
+      \brief Возвращает число задействованных каналов
+    */
+    return nChannels;
+}
+
+unsigned short DrsReadN::getNumOfSamples()
+{
+    /**
+      \brief Возвращает число сэмплов в единичном импульсе
+    */
+    return nSamples;
+}
+
+void DrsReadN::setMaxNumOfChannels(short nCh)
+{
+    maxNumOfChannels = nCh;
 }
 
 void DrsReadN::drsStreamOpen(string filename)
@@ -97,7 +122,7 @@ std::string DrsReadN::getNameOfDataFile()
 /*vector<long>*/std::pair<unsigned long,unsigned long> DrsReadN::getTimeStampsOfEvents()
 {
     /**
-      \brief Возвращает вектор TimeStamps событий. Записаны в миллисекундах с 1.1.1970
+      \brief Возвращает вектор TimeStamps событий. Записаны в секундах с 1.1.1970
 
       \return вектор TimeStamps событий
       */
@@ -112,4 +137,50 @@ void DrsReadN::drsCheckFileStream()
         drsInput.clear();
     }
     drsInput.seekg(pos_mark,ios_base::beg);
+}
+
+void DrsReadN::readTimeInfo(DataMarker position)
+{
+    /* If isBegin = true is begin of reading of data
+     * if isBegin = false is end
+     */
+//    struct tm timeinfo;
+    short tYear,tMon,tDay,tHour,tMin,tSec,tmSec;
+
+
+    if (position == DataMarker::begin || position == DataMarker::end)
+    {
+        drsInput.read((char*)&tYear,sizeof(short));
+        drsInput.read((char*)&tMon,sizeof(short));
+        drsInput.read((char*)&tDay,sizeof(short));
+        drsInput.read((char*)&tHour,sizeof(short));
+        drsInput.read((char*)&tMin,sizeof(short));
+        drsInput.read((char*)&tSec,sizeof(short));
+        drsInput.read((char*)&tmSec,sizeof(short));
+        drsInput.seekg(sizeof(short int),ios::cur);
+
+        timeinfo.tm_year = (int)(tYear - 1900);
+        timeinfo.tm_mon = (int)(tMon - 1);
+        timeinfo.tm_mday = (int)tDay;
+        timeinfo.tm_hour = (int)tHour;
+        timeinfo.tm_min = (int)tMin;
+        timeinfo.tm_sec = (int)tSec;
+    }
+    if (position == DataMarker::body)
+    {
+        drsInput.seekg(8*sizeof(short int),ios::cur);
+    }
+
+    if (position == DataMarker::begin)
+    {
+        time_t date = mktime(&timeinfo);
+        //date =  mktime(timeinfo);
+        timeStamps.first = date;//*1000+tmSec;
+    }
+    if (position == DataMarker::end)
+    {
+        time_t date = mktime(&timeinfo);
+        timeStamps.second = (unsigned long)date;//*1000+tmSec;
+    }
+
 }

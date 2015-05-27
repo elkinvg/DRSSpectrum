@@ -12,11 +12,11 @@ public:
     Drs4Read& operator=(const Drs4Read&) = delete;
 
     bool drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float> &v_times, unsigned short int mode) override;
-    bool drsGetFrameSafety(vector<unsigned short> &v_amplitudes, vector<float> &v_times, unsigned short &usedChannels);
+    bool drsGetFrameSafety(vector<unsigned short> &v_amplitudes, vector<float> &v_times, unsigned short &usedChannels) override;
     void drsFileReadInfo() override;
-    void setMaxNumOfChannels(short int nCh) override;
-    unsigned short int getNumOfChannels() override;
-    unsigned short int getNumOfSamples() override;
+//    void setMaxNumOfChannels(short int nCh) override;
+//    unsigned short int getNumOfChannels() override;
+//    unsigned short int getNumOfSamples() override;
     long calcNumOfPulses() override;
     vector<unsigned long int> countNumOfPulses() override;
 

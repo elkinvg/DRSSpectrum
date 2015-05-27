@@ -10,7 +10,7 @@
     OBJDIR        = ./obj
     BINDIR        = ./bin
     SODIR         = ./SO
-    OBJS          = $(OBJDIR)/drsreadn.o $(OBJDIR)/drs4read.o $(OBJDIR)/drssignalprocn.o
+    OBJS          = $(OBJDIR)/drsreadn.o $(OBJDIR)/drs4read.o $(OBJDIR)/drssignalprocn.o $(OBJDIR)/drs450read.o
 
     TARGETLOC     = $(BINDIR)/$(TARGET)
     
@@ -21,6 +21,7 @@
     
 
 first: release
+#first: debug
 
 release: CXXFLAGS=  $(RELEASE_FLAGS)
 release: all
@@ -35,11 +36,19 @@ $(TARGETLOC): $(OBJS) $(OBJDIR)/main.o
 	$(LINK) $(OBJDIR)/main.o $(OBJS)  $(LIBS) -o $(TARGETLOC)
 	
 ####### compile
-$(OBJDIR)/%.o: %.cpp %.h
+$(OBJDIR)/%.o: %.cpp %.h common.h
 	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-$(OBJDIR)/main.o: main.cpp $(OBJS)
+$(OBJDIR)/drs4read.o: drs4read.cpp drs4read.h common.h $(OBJDIR)/drsreadn.o
+	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
+
+$(OBJDIR)/drs450read.o: drs450read.cpp drs450read.h common.h $(OBJDIR)/drsreadn.o
+	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
+
+$(OBJDIR)/main.o: main.cpp $(OBJS) common.h drstype.h
 	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 

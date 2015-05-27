@@ -184,10 +184,17 @@ int main(int argc, char** argv)
 
     TypeData drsType = DrsReadN::checkTypeOfDrsData(argv[optind]);
 
+    cout << endl;
+
     if (drsType == TypeData::drs40)
     {
         cout << " Type of data is DRS40 " << endl;
         drs = new Drs4Read(nameInputFile);
+    }
+    else if (drsType == TypeData::drs450)
+    {
+        cout << " Type of data is DRS450 " << endl;
+        drs = new Drs450Read(nameInputFile);
     }
     else if (drsType == TypeData::unknown)
     {
