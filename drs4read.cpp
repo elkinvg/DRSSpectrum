@@ -1,5 +1,4 @@
 #include "drs4read.h"
-#include <sys/stat.h>
 #include <algorithm>
 #include <iterator>
 #include <ctime>
@@ -51,6 +50,17 @@ bool Drs4Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float> &
     char buffer2[4];
 
     DataMarker position;
+
+    if (!drsInput) // for online mode
+    {
+        drsInput.close();
+        drsInput.open(fileDataName.c_str(),ios_base::binary);
+        drsInput.seekg (0, ios::end);
+        ios::pos_type pos_marktmp = drsInput.tellg();
+        drsInput.seekg(ios_base::beg);
+        drsInput.seekg(pos_mark_end);
+        pos_mark_end = pos_marktmp;
+    }
 
 
 
@@ -294,7 +304,7 @@ long Drs4Read::calcNumOfPulses()
       \brief Возвращает рассчитанное число фреймов (импульсов). Совпадает с реальным, если в процессе записи не менялось число каналов
       */
     unsigned long int onePulse,onePulseHead,onePulseCh;
-    if (!nPulses)
+    if (!nPulses || isUpdatedfile)
     {
         onePulseHead = 4*sizeof(char) + sizeof(int) + 8*sizeof(short int) + nSamples*sizeof(float);
         onePulseCh = 0;

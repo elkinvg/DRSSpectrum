@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <vector>
+#include <sys/stat.h>
 
 
 using std::ifstream;
@@ -43,6 +44,8 @@ public:
     virtual string getNameOfDataFile();
     virtual std::pair<unsigned long, unsigned long> getTimeStampsOfEvents();
 
+    virtual bool updateFileInfo();
+
 
 //    virtual void DRSFileEnd();
 protected:
@@ -71,6 +74,7 @@ protected:
     string drsMark; // first symbols in the binary data
     string channelMark; // first symbols for new channel
     std::ios::pos_type pos_mark; // stream position
+    std::ios::pos_type pos_mark_end; // stream position
     std::pair<unsigned long, unsigned long> timeStamps;
 };
 

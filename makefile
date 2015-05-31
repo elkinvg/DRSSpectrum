@@ -13,6 +13,7 @@
     OBJS          = $(OBJDIR)/drsreadn.o $(OBJDIR)/drs4read.o $(OBJDIR)/drssignalprocn.o $(OBJDIR)/drs450read.o
 
     TARGETLOC     = $(BINDIR)/$(TARGET)
+    #USETHREADAPP = -DUSETHREADAPP
     
     LIBS          = $(ROOTLIBS)
     COM_FLAGS     = -std=c++11
@@ -50,7 +51,7 @@ $(OBJDIR)/drs450read.o: drs450read.cpp drs450read.h common.h $(OBJDIR)/drsreadn.
 
 $(OBJDIR)/main.o: main.cpp $(OBJS) common.h drstype.h
 	@if ! [ -d $(OBJDIR) ] ; then $(MKDIR) $(OBJDIR) ; fi
-	$(CXX) -c $(CXXFLAGS) -o $@ $<
+	$(CXX) -c $(CXXFLAGS) $(USETHREADAPP) -o $@ $<
 
 clean: FORCE
 	$(DELFILE) ./SO/*.so ./SO/*.so* ./bin/*so ./obj/*.o *.h~ *.cpp~ ./obj/*.d ./bin/$(TARGET)

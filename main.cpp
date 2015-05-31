@@ -1,6 +1,11 @@
 #include <iostream>
 #include <sstream>
 #include <getopt.h>
+#include <signal.h>
+
+#ifdef USETHREADAPP
+#include <thread>
+#endif
 
 #include "drstype.h"
 #include "drssignalprocn.h"
@@ -13,6 +18,7 @@
 
 TApplication *myapp;
 void ctrlplusc(int sig);
+
 void UseApp();
 void RunApp();
 DrsReadN *drs;
@@ -31,6 +37,7 @@ bool amplitudekuskoffmode=false;
 bool isnewoutdir=false;
 bool safetymode=false;
 bool voltmode=false;
+bool onlinemode=false;
 
 unsigned short modes = 0;
 
@@ -38,8 +45,19 @@ unsigned short int get_noise_min,get_noise_max,get_signal_min, get_signal_max;
 int chMode = 0; // Channel mode
 float getfactor=1;     //
 float getfactorB=0;    //  y = factor*x + factorB
+float timerNsec; // for timer (onlinemode)
 
 short int maxNCh;
+
+void online()
+{
+//    UseApp();
+    // нужно для онлайн режима. на некоторых компьютерах, если не запустить
+    // RunApp() не отображаются гистограммы, поэтому пришлось запустить в отдельном потоке
+    // не уверен, что это правильное решение, но пока единственное найденное.
+    sleep(2);
+    RunApp();
+}
 
 int fromStr(const std::string aS)
 {
@@ -50,7 +68,7 @@ int fromStr(const std::string aS)
     return _res;
 }
 
-static const char *optString = "khdrosvm:a:b:n:c:";
+static const char *optString = "khdrosvm:a:b:n:c:e:";
 
 static const struct option longOpts[] = {
     {"help", 0, 0, 'h'},
@@ -65,18 +83,19 @@ static const struct option longOpts[] = {
     {"a-factor", 1, 0, 'a'},
     {"b-shift", 1, 0, 'b'},
     {"outdir", 1, 0, 'n'},
+    {"online", 1, 0, 'e'},
     {0, 0, 0, 0}
 };
 
 void help()
 {
-    cout << "Version 2.0" << endl;
+    cout << "Version 2.2" << endl;
     cout << "Usage:    drsspectrum\tINPUTFILE ";
     cout << "[noise_min noise max signal_min signal_max] " << endl;
     cout << "\t\t\t[-d | --only-detect] [-h | --help] [[-m|--channel-mode] Working channels]" << endl;
     cout << "\t\t\t[-r|--without-root-application] [[-a|--a-factor] factor] [[-b|--b-shift] shift]" << endl;
     cout << "\t\t\t[-o|--out-png] [-k|--amplitude] [[-n|--outdir] newoutdir] [-s|safety]" << endl;
-    cout << "\t\t\t[[-c]--max-num] max num of chs] [-v|--volt-mode]" << endl;
+    cout << "\t\t\t[[-c]--max-num] max num of chs] [-v|--volt-mode] [[-e|--online] sec]" << endl;
     cout << endl;
     cout << "   [noise_min noise max signal_min signal_max] Установка локализации шума и сигнала для всех каналов" << endl;
     cout << "   -d,\t--only-detect\tВычислить noise_min noise max signal_min signal_max и выйти" << endl;
@@ -90,6 +109,7 @@ void help()
     cout << "   -s,\t--safety\tБезопасный режим. Если во время набора менялось число каналов." << endl;
     cout << "   -v,\t--volt-mode\tИзменить volt mode. По умолчанию диапазон от -0,5 до 0,5 V, изменить на 0 - 1 V" << endl;
     cout << "   -c,\t--max-num\t" << BOLD_SH << "<num>" << ENDCOLOR << " установить максимальное число возможных каналов. Используется в безопасном режиме. По умолчанию 4" << endl;
+    cout << "   -e,\t--online\t"<< BOLD_SH << "<sec>" << ENDCOLOR << " online-режим. Задаётся такт таймера в секундах" <<endl;
 
     exit(0);
 }
@@ -138,6 +158,11 @@ int main(int argc, char** argv)
         case 'n':
             isnewoutdir = true;
             tmpOutDir = string(argv[optind-1]);
+            break;
+        case 'e':
+            onlinemode = true;
+            timerNsec = atof(argv[optind-1]);
+            if (timerNsec<1) timerNsec = 1;
             break;
         case 'r':
             rootapplicationflag=false;
@@ -238,6 +263,18 @@ int main(int argc, char** argv)
     if(getfactor!=0 && (getfactor!=1 || getfactorB!=0)) signalProc->setFactorAndShift(getfactor,getfactorB);
 
     if (amplitudekuskoffmode) signalProc->setAmplitudeKuskoffMode(true);
+
+    if (onlinemode)
+    {
+        UseApp();
+
+        //signal(SIGINT,ctrlplusconeline);
+#ifdef USETHREADAPP
+        std::thread func_thread(online);
+#endif
+        signalProc->getSpectumOnline(timerNsec);
+        //RunApp();
+    }
     auto spectr = signalProc->getSpectumOffline();
 
     if (onlydetect)
@@ -251,7 +288,11 @@ int main(int argc, char** argv)
     if (isnewoutdir) signalProc->setOutputDirectory(tmpOutDir);
     if (isoutpng) signalProc->setOutPngFileFlag();
     signalProc->rootProc(spectr);
-    if(rootapplicationflag) RunApp();
+    if(rootapplicationflag)
+    {
+        RunApp();
+        signal(SIGINT,ctrlplusc);
+    }
 
 
 
@@ -261,13 +302,15 @@ int main(int argc, char** argv)
 
 void ctrlplusc(int sig)
 {
-    cout << "..." << endl;
-    if(rootapplicationflag) {delete signalProc;delete drs;}
-    exit(0);
+    cout << endl;
+    cout << "exit" << endl;
+    if(rootapplicationflag || onlinemode) {delete signalProc; delete drs; exit(0);}
 }
+
 
 void UseApp()
 {
+    signal(SIGINT,ctrlplusc);
     myapp = new TApplication("App",0,0);
     cout << "\e[1;33m \e[40m Use CTRL+C to exit!!! \E[0m" << endl;
 

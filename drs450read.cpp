@@ -1,5 +1,4 @@
 #include "drs450read.h"
-#include <sys/stat.h>
 
 Drs450Read::Drs450Read(string filename)
 {
@@ -104,7 +103,7 @@ long Drs450Read::calcNumOfPulses()
     sizeOfHead = 8 + nChannels*(4+nSamples*sizeof(float));
 
 
-    if (!nPulses)
+    if (!nPulses || isUpdatedfile)
     {
         onePulseHead = 4*sizeof(char) + sizeof(int) + 12*sizeof(short int);
         onePulseCh = 0;
@@ -149,11 +148,26 @@ bool Drs450Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float>
 
     DataMarker position;
 
+    //tmp
+    if (!drsInput) // for online mode
+    {
+        drsInput.close();
+        drsInput.open(fileDataName.c_str(),ios_base::binary);
+        drsInput.seekg (0, ios::end);
+        ios::pos_type pos_marktmp = drsInput.tellg();
+        drsInput.seekg(ios_base::beg);
+        drsInput.seekg(pos_mark_end);
+        pos_mark_end = pos_marktmp;
+    }
+    //tmp
+
+
     drsInput.read(&buffer[0],4*sizeof(char));
     buffer[4] = '\0';
     buffer2[3] = '\0';
     char symbolChNum[1];
     unsigned short curNChannels;
+
 
     if (strcmp(buffer,drs450Mark.c_str()) == 0)
     {

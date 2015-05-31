@@ -42,6 +42,7 @@ public:
     void setAmplitudeKuskoffMode(bool isAmp);
     void setSafetyMode();
     void setOutputDirectory(string outDir);
+    void getSpectumOnline(float nSec);
 
     // old drsSpectrumProc
     vector<vector<float> > getSpectumOffline();
@@ -57,6 +58,9 @@ private:
     void createTree(const vector<vector<float> > &signal, TFile *tFile);
     void createTreeTest(const vector<vector<float> > &signal, string outfile, TFile *tFile);
     void createSumHist(TFile *tFile);
+
+    void spectrProcDetect(vector<unsigned short> &amplitudes, vector<float> &times);
+    void spectrProcValues(vector<vector<float>> &signalValues,vector<unsigned short> &amplitudes, vector<float> &times);
 
     DrsReadN *drsRead;
 

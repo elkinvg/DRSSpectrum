@@ -93,6 +93,9 @@ void DrsReadN::drsStreamOpen(string filename)
         drsInput.close();
         exit(1);
     }
+    drsInput.seekg (0, ios::end);
+    pos_mark_end = drsInput.tellg();
+    drsInput.seekg(ios_base::beg);
 
 }
 
@@ -127,6 +130,26 @@ std::string DrsReadN::getNameOfDataFile()
       \return вектор TimeStamps событий
       */
     return timeStamps;
+}
+
+bool DrsReadN::updateFileInfo()
+{
+    struct stat buffer;
+    stat(fileDataName.c_str(),&buffer);
+
+    unsigned long size = buffer.st_size;
+    if (size > sizeOfFile)
+    {
+//        cout << " file updated " << endl;
+        sizeOfFile = size;
+        isUpdatedfile = true;
+//        cout << " file new size: " << sizeOfFile << endl;
+    }
+    else
+    {
+        isUpdatedfile = false;
+    }
+    return isUpdatedfile;
 }
 
 void DrsReadN::drsCheckFileStream()

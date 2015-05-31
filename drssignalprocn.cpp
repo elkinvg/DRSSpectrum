@@ -217,6 +217,71 @@ void DrsSignalProcN::createSumHist(TFile *tFile)
     }
 }
 
+void DrsSignalProcN::spectrProcDetect(vector<unsigned short> &amplitudes, vector<float> &times)
+{
+    bool endFile = false;
+    bool tmpNewCh;
+    unsigned short tmpCheckMode = 1;
+
+    while (!endFile) {
+        endFile = drsRead->drsGetFrame(amplitudes,times,work_ch_mode_);
+        for (int i=0;i<numofch;i++)
+        {
+            if (!i) tmpNewCh = true;
+
+            if (tmpCheckMode & work_ch_mode_ )
+            {
+                autoSignalDetectKusskoff(amplitudes,i,tmpNewCh,endFile);
+                tmpNewCh = false;
+            }
+            tmpCheckMode = tmpCheckMode << 1;
+        }
+        tmpCheckMode = 1;
+    }
+}
+
+void DrsSignalProcN::spectrProcValues(vector<vector<float> > &signalValues, vector<unsigned short> &amplitudes, vector<float> &times)
+{
+    bool endFile = false;
+    unsigned short tmpCheckMode = 1;
+
+    float tmpSignal;
+    vector<float> tmpmaxsignal,tmpminsignal;
+    tmpmaxsignal.resize(numofch);
+    tmpminsignal.resize(numofch);
+
+    vector<bool> tmpI;
+    tmpI.resize(numofch);
+
+    while  (!endFile)
+    {
+        endFile = drsRead->drsGetFrame(amplitudes,times,work_ch_mode_);
+
+        for (int i=0;i<numofch;i++)
+        {
+            if (tmpCheckMode & work_ch_mode_ )
+            {
+                tmpSignal = getSignalWithKuskoffMethod(amplitudes,times,i);
+                if(!autodetect) countSumAmpKusskoff(amplitudes,i);
+                if(tmpSignal!=-1111)
+                {
+                    signalValues[i].push_back(tmpSignal);
+                    if (!tmpI[i]) {tmpmaxsignal[i] = tmpminsignal[i] = tmpSignal; tmpI[i]=!tmpI[i];}
+                    else
+                    {
+                        if (tmpSignal>tmpmaxsignal[i]) tmpmaxsignal[i] = tmpSignal;
+                        if (tmpSignal<tmpminsignal[i]) tmpminsignal[i] = tmpSignal;
+                    }
+                }
+            }
+            tmpCheckMode = tmpCheckMode << 1;
+        }
+        tmpCheckMode = 1;
+    }
+    minValOfSignal = tmpminsignal;
+    maxValOfSignal = tmpmaxsignal;
+}
+
 
 void DrsSignalProcN::createTree(const vector<vector<float> > &signal, TFile *tFile)
 {
@@ -387,6 +452,85 @@ void DrsSignalProcN::setOutputDirectory(string outDir)
     if (access(&(workdir+resdir).c_str()[0],0)!=0) mkdir(&(workdir+resdir).c_str()[0],0777);
 }
 
+void DrsSignalProcN::getSpectumOnline(float nSec)
+{
+    long nPulses;
+    vector<unsigned short> amplitudes;
+    vector<float> times;
+    vector<vector<float>> signalValues;
+    vector<unsigned long> iter;
+
+    if (autodetect)
+    {
+        spectrProcDetect(amplitudes,times);
+    }
+
+    signalValues.resize(numofch);
+    iter.resize(numofch);
+
+    for (int i=0;i<numofch;i++) signalValues[i].reserve(drsRead->calcNumOfPulses());
+
+    drsRead->drsFileSeekBegin();
+
+    spectrProcValues(signalValues,amplitudes,times);
+
+
+    unsigned short tmpCheckMode = 1;
+    TCanvas **canvas2 = new TCanvas*[numofch];
+    TH1F **histSpectr2 = new TH1F*[numofch];
+
+    for (int i=0;i<numofch;i++)
+    {
+        if (!(tmpCheckMode & work_ch_mode_)) {tmpCheckMode = tmpCheckMode << 1;continue;}
+        cout << endl;
+        cout << " Channel " << i+1 << endl;
+        cout << " Noise min:\t" << BLUE_SH << noise_min_[i] << ENDCOLOR << endl;
+        cout << " Noise max:\t" << BLUE_SH << noise_max_[i] << ENDCOLOR << endl;
+        cout << " Signal min\t" << BLUE_SH << signal_min_[i] << ENDCOLOR << endl;
+        cout << " Signal max\t" << BLUE_SH << signal_max_[i] << ENDCOLOR << endl;
+
+        if ((times.size()/numsampl)==(numofch))
+            cout << " Sampling frequency:"<< BLUE_SH  << 1/(times[i*numsampl+10] - times[i*numsampl+9]) << ENDCOLOR <<"GS/s" << endl;
+        else
+            cout << " Sampling frequency:"<< BLUE_SH  << 1/(times[10] - times[9]) << ENDCOLOR <<"GS/s" << endl;
+        string pCh = "_" + std::to_string(i)+"ch";
+        canvas2[i] = new TCanvas(("DRS-Signal"+pCh).c_str(),("DRS-Signal "+pCh).c_str(),800,600);
+        histSpectr2[i] = new TH1F((inputFileName+pCh).c_str(),(inputFileName+pCh).c_str(),nBins,(minValOfSignal[i]*factor_[i]) + shift_[i],maxValOfSignal[i]*factor_[i] + shift_[i]);
+        for (int j=0;j<signalValues[i].size();j++)
+        {
+            histSpectr2[i]->Fill(factor_[i]*signalValues[i][j]+shift_[i]);
+        }
+        iter[i] = signalValues[i].size();
+        histSpectr2[i]->Draw();
+        canvas2[i]->Draw();
+        canvas2[i]->Update();
+        tmpCheckMode = tmpCheckMode << 1;
+    }
+
+
+    while(true)
+    {
+        tmpCheckMode = 1;
+        sleep(nSec);
+        nPulses = drsRead->calcNumOfPulses();
+        if(!drsRead->updateFileInfo()) continue;
+        spectrProcValues(signalValues,amplitudes,times);
+        for (int i=0;i<numofch;i++)
+        {
+            if (!(tmpCheckMode & work_ch_mode_)) {tmpCheckMode = tmpCheckMode << 1;continue;}
+            for (int j=iter[i];j<signalValues[i].size();j++)
+            {
+                histSpectr2[i]->Fill(factor_[i]*signalValues[i][j]+shift_[i]);
+            }
+            histSpectr2[i]->Draw();
+            canvas2[i]->Draw();
+            canvas2[i]->Update();
+            tmpCheckMode = tmpCheckMode << 1;
+            iter[i] = signalValues[i].size();
+        }
+    }
+}
+
 
 vector<vector<float> > DrsSignalProcN::getSpectumOffline()
 {
@@ -448,21 +592,7 @@ vector<vector<float> > DrsSignalProcN::getSpectumOffline()
         }
         else
         {
-            while (!endFile) {
-                endFile = drsRead->drsGetFrame(amplitudes,times,work_ch_mode_);
-                for (int i=0;i<numofch;i++)
-                {
-                    if (!i) tmpNewCh = true;
-
-                    if (tmpCheckMode & work_ch_mode_ )
-                    {
-                        autoSignalDetectKusskoff(amplitudes,i,tmpNewCh,endFile);
-                        tmpNewCh = false;
-                    }
-                    tmpCheckMode = tmpCheckMode << 1;
-                }
-                tmpCheckMode = 1;
-            }
+            spectrProcDetect(amplitudes,times);
         }
     }
 
@@ -544,38 +674,13 @@ vector<vector<float> > DrsSignalProcN::getSpectumOffline()
             if (!autodetect) tmpS++;
         }
         if (!autodetect) nPulses = tmpS;
+        minValOfSignal = tmpminsignal;
+        maxValOfSignal = tmpmaxsignal;
     }
     else
     {
-        while  (!endFile)
-        {
-            endFile = drsRead->drsGetFrame(amplitudes,times,work_ch_mode_);
-
-            for (int i=0;i<numofch;i++)
-            {
-                if (tmpCheckMode & work_ch_mode_ )
-                {
-                    tmpSignal = getSignalWithKuskoffMethod(amplitudes,times,i);
-                    if(!autodetect) countSumAmpKusskoff(amplitudes,i);
-                    if(tmpSignal!=-1111)
-                    {
-                        signalValues[i].push_back(tmpSignal);
-                        if (!tmpI[i]) {tmpmaxsignal[i] = tmpminsignal[i] = tmpSignal; tmpI[i]=!tmpI[i];}
-                        else
-                        {
-                            if (tmpSignal>tmpmaxsignal[i]) tmpmaxsignal[i] = tmpSignal;
-                            if (tmpSignal<tmpminsignal[i]) tmpminsignal[i] = tmpSignal;
-                        }
-                    }
-                }
-                tmpCheckMode = tmpCheckMode << 1;
-            }
-            tmpCheckMode = 1;
-        }
+        spectrProcValues(signalValues,amplitudes,times);
     }
-
-    minValOfSignal = tmpminsignal;
-    maxValOfSignal = tmpmaxsignal;
 
     timestamps = drsRead->getTimeStampsOfEvents();
 
