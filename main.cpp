@@ -84,6 +84,7 @@ static const struct option longOpts[] = {
     {"b-shift", 1, 0, 'b'},
     {"outdir", 1, 0, 'n'},
     {"online", 1, 0, 'e'},
+    {"version",0,0,0},
     {0, 0, 0, 0}
 };
 
@@ -170,6 +171,13 @@ int main(int argc, char** argv)
         case 'o':
             isoutpng=true;
             break;
+        case 0:
+            if (strcmp("version",longOpts[longIndex].name) == 0)
+            {
+                cout << "DrsSpectrum Version 2.2" << endl;
+                exit(0);
+            }
+            exit(0);
         default:
             help();
             break;
