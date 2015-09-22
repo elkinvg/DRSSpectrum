@@ -45,6 +45,7 @@ public:
     virtual std::pair<unsigned long, unsigned long> getTimeStampsOfEvents();
 
     virtual bool updateFileInfo();
+    virtual vector<unsigned short> getChannelsInBoard();
 
 
 //    virtual void DRSFileEnd();

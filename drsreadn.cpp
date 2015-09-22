@@ -152,6 +152,13 @@ bool DrsReadN::updateFileInfo()
     return isUpdatedfile;
 }
 
+vector<unsigned short> DrsReadN::getChannelsInBoard()
+{
+    vector<unsigned short> x;
+    x.push_back(nChannels);
+    return x;
+}
+
 void DrsReadN::drsCheckFileStream()
 {
     pos_mark = drsInput.tellg();

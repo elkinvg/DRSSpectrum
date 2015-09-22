@@ -13,5 +13,6 @@ const string drs4chMark = "C00";
 const string drs450Mark = "TIME";
 const string drs450chMark = drs4chMark;
 const string drs450newHeadMark = "EHDR";
+const string drs450newBoardMark = "B#";
 
 #endif // COMMON_H

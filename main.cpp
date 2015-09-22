@@ -90,7 +90,7 @@ static const struct option longOpts[] = {
 
 void help()
 {
-    cout << "Version 2.2" << endl;
+    cout << "Version 2.3" << endl;
     cout << "Usage:    drsspectrum\tINPUTFILE ";
     cout << "[noise_min noise max signal_min signal_max] " << endl;
     cout << "\t\t\t[-d | --only-detect] [-h | --help] [[-m|--channel-mode] Working channels]" << endl;

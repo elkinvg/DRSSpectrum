@@ -1,6 +1,6 @@
     ROOTFLAGS     = $(shell root-config --cflags)
     #ROOTLIBS      = $(shell root-config --glibs)
-    ROOTLIBS     = -L/usr/lib/x86_64-linux-gnu -lCore -lRIO -lHist -lGpad -lTree -lm -ldl
+    ROOTLIBS     = -L$(shell root-config --libdir) -lCore -lRIO -lHist -lGpad -lTree -lm -ldl
     TARGET        = bindrsspectrum
     CC            = gcc
     CXX           = g++

@@ -286,10 +286,27 @@ void DrsSignalProcN::spectrProcValues(vector<vector<float> > &signalValues, vect
 void DrsSignalProcN::createTree(const vector<vector<float> > &signal, TFile *tFile)
 {
     if(!tFile->IsOpen()) return;
+
     TTree *signalDataRootTree;
     gROOT->ProcessLine("#include <vector>");
 
     unsigned short tmpCheckMode = 1;
+
+    auto boardInfoVector = drsRead->getChannelsInBoard();
+    if (!(boardInfoVector.size()%2))
+    {
+        TTree *treeBoard = new TTree("Board_Info","Board_Info");
+
+        for (int i=0;i<(boardInfoVector.size()/2);i++)
+        {
+            string postfix = "_"+std::to_string(i);
+            treeBoard->Branch(("Board" + postfix + +"_id").c_str(),&boardInfoVector[boardInfoVector.size()/2+i],("id"+postfix+"/s").c_str());
+            treeBoard->Branch(("Board" + postfix + "_numOfCh").c_str(),&boardInfoVector[i],("nofch"+postfix+"/s").c_str());
+
+        }treeBoard->Fill();
+        treeBoard->Write();
+        treeBoard->Delete();
+    }
 
     for (int i=0; i<numofch; i++)
     {
@@ -309,9 +326,11 @@ void DrsSignalProcN::createTree(const vector<vector<float> > &signal, TFile *tFi
 
         signalDataRootTree->Fill();
         signalDataRootTree->Write();
+        signalDataRootTree->Delete();
 
         if(!safetymode) tmpCheckMode = tmpCheckMode << 1;
     }
+
 }
 
 void DrsSignalProcN::createTreeTest(const vector<vector<float> > &signal, string outfile, TFile *tFile)
@@ -790,6 +809,14 @@ void DrsSignalProcN::autoSignalDetectKusskoffProc(int eventnum, unsigned short c
     signal_max_[chNum] = 16+8*signal_max_[chNum];
     noise_min_[chNum] = 16+8*noise_min_[chNum];
     noise_max_[chNum] = 16+8*noise_max_[chNum];
+
+    if (signal_min_[chNum]>1024 || signal_max_[chNum]>1024 || noise_min_[chNum] >1024 || noise_max_[chNum] > 1024)
+    {
+        noise_min_[chNum] = 16;
+        noise_max_[chNum] = 300;
+        signal_min_[chNum] = 500;
+        signal_max_[chNum] = 700;
+    }
 
 
     if(integrall < 0) posorneg=-1;

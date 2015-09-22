@@ -11,6 +11,7 @@ Drs450Read::Drs450Read(string filename)
     maxNumOfChannels = 4;
     timeStamps.first = 0;
     timeStamps.second = 0;
+    channelsInBoard.clear();
     drsStreamOpen(fileDataName);
     drsFileReadInfo();
 }
@@ -35,43 +36,8 @@ void Drs450Read::drsFileReadInfo()
 
      После получения информации ставит указатель ввода в начало файла
      */
-    char mark[5];
-    mark[4] = '\0';
-    unsigned short int boardNum;
-    std::ios::pos_type tmppo;
 
-    drsInput.seekg(6*sizeof(char));
-    drsInput.read((char*)&boardNum,sizeof(short));
-    drsInput.seekg((nSamples+1)*sizeof(float),ios_base::cur);tmppo=drsInput.tellg();
-    drsInput.read((char*)&mark,4*sizeof(char));
-
-//    drsInput.seekg((6+nSamples+nSamples/2)*sizeof(float),ios_base::cur);
-//    drsInput.read((char*)&mark,4*sizeof(char));
-//    mark[4] = '\0';
-    if (strcmp(mark,drsMark.c_str())==0) nChannels=1;
-    else
-    {
-        drsInput.seekg((nSamples)*sizeof(float),ios_base::cur);tmppo=drsInput.tellg();
-        drsInput.read((char*)&mark,4*sizeof(char));
-        mark[4] = '\0';
-        if (strcmp(mark,drsMark.c_str())==0) nChannels=2;
-        else
-        {
-            drsInput.seekg((nSamples)*sizeof(float),ios_base::cur);tmppo=drsInput.tellg();
-            drsInput.read((char*)&mark,4*sizeof(char));
-            mark[4] = '\0';
-            if (strcmp(mark,drsMark.c_str())==0) nChannels=3;
-            else
-            {
-                drsInput.seekg((nSamples)*sizeof(float),ios_base::cur);tmppo=drsInput.tellg();
-                drsInput.read((char*)&mark,4*sizeof(char));
-                mark[4] = '\0';
-                if (strcmp(mark,drsMark.c_str())==0) nChannels=4;
-                else cerr << RED_SH <<" Channels more than 4 "  << ENDCOLOR << endl;
-            }
-        }
-    }
-    pos_beginofdata = tmppo;
+    calcNumOfAllChannel();
 
     drsFileSeekBegin();
 
@@ -86,6 +52,14 @@ void Drs450Read::drsFileReadInfo()
     cout << " Name of input file\t\t" << BLUE_SH <<fileDataName << ENDCOLOR << endl;
     cout << " Type\t\t\t\t" << BLUE_SH  << "DRS450" << ENDCOLOR << endl;
     cout << " Calculated number of channels\t" << BLUE_SH << nChannels << ENDCOLOR << endl;
+    cout << " Number of boards\t\t" << BLUE_SH << channelsInBoard.size() << ENDCOLOR << endl;
+    cout << " Number of channels in boards\t";
+
+    for (int ii=0;ii<channelsInBoard.size();ii++)
+    {
+        if (ii) cout << "\t\t\t\t";
+        cout << BLUE_SH << "boardId_" << boardNumber[ii] << GREEN_SH << channelsInBoard[ii] << ENDCOLOR << endl;
+    }
     cout << " Calculated number of pulses\t" << BLUE_SH << calcNumOfPulses() << ENDCOLOR << endl;
     cout << endl;
     cout << " Size: " << GREEN_SH << sizeOfFile << ENDCOLOR << " Bytes " << GREEN_SH << (float)sizeOfFile/1024. << ENDCOLOR << " KiB" << endl;
@@ -98,17 +72,26 @@ long Drs450Read::calcNumOfPulses()
       \brief Возвращает рассчитанное число фреймов (импульсов). Совпадает с реальным, если в процессе записи не менялось число каналов
       */
     unsigned long int onePulse,onePulseHead,onePulseCh;
-    unsigned long int sizeOfHead;
+    unsigned long int sizeOfHead =0;
 
-    sizeOfHead = 8 + nChannels*(4+nSamples*sizeof(float));
+    sizeOfHead = 4;
+
+    for (auto& inc: channelsInBoard)
+    {
+        sizeOfHead += 4;
+        sizeOfHead += (inc*(4 + nSamples*sizeof(float)));
+    }
 
 
     if (!nPulses || isUpdatedfile)
     {
-        onePulseHead = 4*sizeof(char) + sizeof(int) + 12*sizeof(short int);
+        onePulseHead = 4*sizeof(char) + sizeof(int) + 8*sizeof(short int);
         onePulseCh = 0;
 
-        for (int i=0;i<nChannels;i++) onePulseCh += ( 4*sizeof(char) + nSamples*sizeof(short int));
+        for (auto& inc: channelsInBoard)
+        {
+            onePulseCh += (4*sizeof(short int) + inc*(nSamples*sizeof(short int) + 4*sizeof(char)));
+        }
 
         onePulse = onePulseCh + onePulseHead;
         nPulses = (sizeOfFile-sizeOfHead)/onePulse;
@@ -143,8 +126,6 @@ bool Drs450Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float>
     drsCheckFileStream();
     if (v_times.size()<nSamples) v_times.resize(nSamples);
     if (v_amplitudes.size()<nSamples*nChannels) v_amplitudes.resize(nSamples*nChannels);
-    char buffer2[4];
-
 
     DataMarker position;
 
@@ -164,8 +145,7 @@ bool Drs450Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float>
 
     drsInput.read(&buffer[0],4*sizeof(char));
     buffer[4] = '\0';
-    buffer2[3] = '\0';
-    char symbolChNum[1];
+
     unsigned short curNChannels;
 
 
@@ -193,28 +173,29 @@ bool Drs450Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float>
     else position = DataMarker::body;
 
     readTimeInfo(position);
-    drsInput.seekg(8*sizeof(char),ios::cur);
+//    drsInput.seekg(8*sizeof(char),ios::cur);
 
     if (event_serial == 1) v_times = timeBinData;
 
-
     unsigned short tmpCheckMode = 1;
-    unsigned short nCh;
+    int ii=0;
 
-    for (int i=0;i<curNChannels;i++)
+    for (auto& inc: channelsInBoard)
     {
-        drsInput.read((char*)&buffer2,3*sizeof(char));
-        drsInput.read((char*)&symbolChNum,sizeof(char));
-        nCh = atoi(symbolChNum);
+        drsInput.seekg(8*sizeof(char),ios::cur);
+        for(int i=0;i<inc;i++)
+        {
+            drsInput.seekg(4*sizeof(char),ios::cur);
 
-        if (mode & tmpCheckMode)
-            drsInput.read((char*)&v_amplitudes[i*nSamples],nSamples*sizeof(short));
-        else
-            drsInput.seekg(nSamples*sizeof(short),ios::cur);
-        tmpCheckMode = tmpCheckMode << 1;
+            if (mode & tmpCheckMode)
+                drsInput.read((char*)&v_amplitudes[ii*nSamples],nSamples*sizeof(short));
+            else
+                drsInput.seekg(nSamples*sizeof(short),ios::cur);
+            tmpCheckMode = tmpCheckMode << 1;
+            ii++;
+        }
+
     }
-
-
 
     pos_mark = drsInput.tellg();
     drsInput.read((char*)&buffer[0],4*sizeof(char));
@@ -227,9 +208,6 @@ bool Drs450Read::drsGetFrame(vector<unsigned short> &v_amplitudes, vector<float>
     isEndFile = false;
     drsInput.seekg(pos_mark);
     return isEndFile;
-
-
-    //v_times = timeBinData[0];
 }
 
 bool Drs450Read::drsGetFrameSafety(vector<unsigned short> &v_amplitudes, vector<float> &v_times, unsigned short &usedChannels)
@@ -247,6 +225,13 @@ vector<unsigned long> Drs450Read::countNumOfPulses()
     chPulses.resize(nChannels);
     for (int i=0;i<nChannels;i++) chPulses[i] = nPulses;
     return chPulses;
+}
+
+vector<unsigned short> Drs450Read::getChannelsInBoard()
+{
+    vector<unsigned short> output = channelsInBoard;
+    output.insert(output.end(),boardNumber.begin(),boardNumber.end());
+    return output;
 }
 
 void Drs450Read::fillTimeBinData()
@@ -270,5 +255,69 @@ void Drs450Read::fillTimeBinData()
                 timeBinData[i*nSamples + j] = timeBinData[i*nSamples + j -1] + tmpFloat[j];
             }
         }
+    }
+}
+
+MarkOfData Drs450Read::getNumOfChannelsInBoard()
+{
+    /**
+     * @brief получает число каналов в каждой плате.
+     */
+    char mark[5];
+    mark[4] = '\0';
+    unsigned short int boardNum;
+    unsigned short numOfChInBoard=0;
+    std::ios::pos_type tmppo;
+
+    drsInput.read((char*)&boardNum,sizeof(short));
+    drsInput.seekg((nSamples+1)*sizeof(float),ios_base::cur);/*tmppo=drsInput.tellg();*/
+    boardNumber.push_back(boardNum);
+
+
+    while (true) {
+        tmppo=drsInput.tellg();
+        drsInput.read((char*)&mark,4*sizeof(char));
+
+        if (strcmp(mark,drsMark.c_str())==0)
+        {
+            nChannels++;
+            numOfChInBoard++;
+            channelsInBoard.push_back(numOfChInBoard);
+            pos_beginofdata = tmppo;
+            return MarkOfData::newEvent;
+        }
+        mark[2] = '\0';
+
+        if (strcmp(mark,drs450newBoardMark.c_str())==0)
+        {
+            nChannels++;
+            numOfChInBoard++;
+            channelsInBoard.push_back(numOfChInBoard);
+            drsInput.seekg(tmppo);
+            return MarkOfData::newBoard;
+        }
+        else
+        {
+            nChannels++;
+            numOfChInBoard++;
+            drsInput.seekg((nSamples)*sizeof(float),ios_base::cur);
+        }
+    }
+}
+
+void Drs450Read::calcNumOfAllChannel()
+{
+    /**
+     * @brief рассчитывает общее число каналов. Получается вектор channelsInBoard, где размер вектора - число плат, значение элементов - число каналов в каждой плате
+     */
+    MarkOfData mark;
+
+    drsInput.seekg(6*sizeof(char));
+
+    while (true)
+    {
+        mark = getNumOfChannelsInBoard();
+        if(mark==MarkOfData::newEvent) return;
+        drsInput.seekg(2*sizeof(char),ios_base::cur);
     }
 }
